@@ -7,7 +7,10 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizePackageImports: ['lucide-react']
-  }
+  },
+  images: {
+    domains: ['i.ytimg.com'],
+  },
 };
 
 export default nextConfig;

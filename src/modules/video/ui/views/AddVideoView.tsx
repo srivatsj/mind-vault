@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -128,9 +129,11 @@ export const AddVideoView = () => {
                 <div className="flex gap-4">
                   <div className="flex-shrink-0">
                     <div className="w-32 h-18 bg-muted rounded-lg overflow-hidden">
-                      <img
+                      <Image
                         src={`https://img.youtube.com/vi/${YouTubeService.extractVideoId(url)}/hqdefault.jpg`}
                         alt="Video thumbnail"
+                        width={128}
+                        height={72}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           // Fallback to medium quality thumbnail if high quality fails

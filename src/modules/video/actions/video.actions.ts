@@ -101,7 +101,10 @@ export async function getVideoSummary(summaryId: string): Promise<GetVideoSummar
     });
 
     if (!session?.user) {
-      redirect("/sign-in");
+      return {
+        success: false,
+        error: "Authentication required"
+      };
     }
 
     // Fetch video summary
@@ -137,7 +140,10 @@ export async function getAllVideoSummaries(): Promise<GetVideoSummaryResult> {
     });
 
     if (!session?.user) {
-      redirect("/sign-in");
+      return {
+        success: false,
+        error: "Authentication required"
+      };
     }
 
     // Fetch all video summaries for user

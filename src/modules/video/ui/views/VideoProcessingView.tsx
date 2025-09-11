@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
 import { 
   ArrowLeft, 
   Video, 
@@ -16,59 +16,15 @@ import {
   RefreshCw,
   ExternalLink
 } from "lucide-react";
-
-interface VideoSummary {
-  id: string;
-  title: string;
-  description: string | null;
-  channelName: string | null;
-  duration: number | null;
-  thumbnailUrl: string | null;
-  youtubeUrl: string;
-  processingStatus: "pending" | "processing" | "completed" | "failed";
-  processingError?: string | null;
-  createdAt: string | Date;
-}
+import { useVideoStream } from "../../hooks/useVideoStream";
 
 interface VideoProcessingViewProps {
   summaryId: string;
 }
 
 export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => {
-  const [summary, setSummary] = useState<VideoSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const router = useRouter();
-
-  const fetchSummary = async () => {
-    try {
-      const { getVideoSummary } = await import("../../actions/video.actions");
-      const result = await getVideoSummary(summaryId);
-      
-      if (result.success && result.data) {
-        setSummary(result.data as VideoSummary);
-      } else {
-        setError(result.error || "Failed to fetch video summary");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSummary();
-    
-    // Poll for updates if processing
-    const interval = setInterval(() => {
-      if (summary?.processingStatus === "processing" || summary?.processingStatus === "pending") {
-        fetchSummary();
-      }
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [summaryId, summary?.processingStatus, fetchSummary]);
+  const { summary, loading, error } = useVideoStream(summaryId);
 
   const formatDuration = (seconds: number | null): string => {
     if (!seconds) return "0:00";
@@ -213,10 +169,12 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
               <CardContent>
                 {summary.thumbnailUrl && (
                   <div className="aspect-video bg-muted rounded-lg overflow-hidden mb-4">
-                    <img
+                    <Image
                       src={summary.thumbnailUrl}
                       alt={summary.title}
                       className="w-full h-full object-cover"
+                      width={640}
+                      height={360}
                     />
                   </div>
                 )}
