@@ -110,36 +110,36 @@ export const LibraryView = () => {
         return {
           icon: Clock,
           label: "Queued",
-          color: "bg-yellow-500/20 text-yellow-700 border-yellow-500/30",
-          iconColor: "text-yellow-600"
+          color: "bg-yellow-500 text-yellow-50 border-yellow-600",
+          iconColor: "text-yellow-100"
         };
       case "processing":
         return {
           icon: RefreshCw,
           label: "Processing",
-          color: "bg-blue-500/20 text-blue-700 border-blue-500/30",
-          iconColor: "text-blue-600"
+          color: "bg-blue-500 text-blue-50 border-blue-600",
+          iconColor: "text-blue-100"
         };
       case "completed":
         return {
           icon: CheckCircle,
           label: "Completed",
-          color: "bg-green-500/20 text-green-700 border-green-500/30",
-          iconColor: "text-green-600"
+          color: "bg-green-500 text-green-50 border-green-600",
+          iconColor: "text-green-100"
         };
       case "failed":
         return {
           icon: AlertCircle,
           label: "Failed",
-          color: "bg-red-500/20 text-red-700 border-red-500/30",
-          iconColor: "text-red-600"
+          color: "bg-red-500 text-red-50 border-red-600",
+          iconColor: "text-red-100"
         };
       default:
         return {
           icon: Clock,
           label: "Unknown",
-          color: "bg-gray-500/20 text-gray-700 border-gray-500/30",
-          iconColor: "text-gray-600"
+          color: "bg-gray-500 text-gray-50 border-gray-600",
+          iconColor: "text-gray-100"
         };
     }
   };
@@ -308,7 +308,7 @@ export const LibraryView = () => {
               return (
                 <Card 
                   key={video.id} 
-                  className="group hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-primary/20"
+                  className="group hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-primary/20 flex flex-col"
                   onClick={() => router.push(`/videos/${video.id}`)}
                 >
                   <CardHeader className="p-0">
@@ -336,7 +336,7 @@ export const LibraryView = () => {
                       
                       {/* Status badge */}
                       <div className="absolute top-2 left-2">
-                        <Badge className={`gap-1 text-xs ${statusInfo.color}`}>
+                        <Badge className={`gap-1 text-xs font-medium ${statusInfo.color}`}>
                           <StatusIcon className={`h-3 w-3 ${statusInfo.iconColor} ${video.processingStatus === 'processing' ? 'animate-spin' : ''}`} />
                           {statusInfo.label}
                         </Badge>
@@ -344,32 +344,30 @@ export const LibraryView = () => {
                     </div>
                   </CardHeader>
                   
-                  <CardContent className="p-4">
-                    <div className="space-y-2">
+                  <CardContent className="p-4 flex-1 flex flex-col">
+                    <div className="space-y-2 flex-1">
                       <h3 className="font-medium line-clamp-2 text-sm leading-tight group-hover:text-primary transition-colors">
                         {video.title}
                       </h3>
                       
                       {video.channelName && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <User className="h-3 w-3" />
+                          <User className="h-3 w-3 flex-shrink-0" />
                           <span className="truncate">{video.channelName}</span>
                         </div>
                       )}
                       
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
+                        <Calendar className="h-3 w-3 flex-shrink-0" />
                         <span>{formatDate(video.createdAt)}</span>
                       </div>
                     </div>
-                  </CardContent>
-                  
-                  <div className="px-4 pb-4">
-                    <div className="flex gap-2">
+                    
+                    <div className="flex gap-2 mt-4">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="flex-1 gap-1 text-xs"
+                        className="flex-1 gap-1 text-xs h-8"
                         onClick={(e) => {
                           e.stopPropagation();
                           router.push(`/videos/${video.id}`);
@@ -381,7 +379,7 @@ export const LibraryView = () => {
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="gap-1 text-xs"
+                        className="gap-1 text-xs h-8 px-2"
                         onClick={(e) => {
                           e.stopPropagation();
                           window.open(video.youtubeUrl, "_blank");
@@ -390,7 +388,7 @@ export const LibraryView = () => {
                         <ExternalLink className="h-3 w-3" />
                       </Button>
                     </div>
-                  </div>
+                  </CardContent>
                 </Card>
               );
             })}
