@@ -17,6 +17,10 @@
 
 **Authentication & Security:**
 - **BetterAuth** - Modern authentication with session management
+  - Social login (GitHub, Google)
+  - Email/password authentication
+  - Drizzle adapter integration with PostgreSQL
+  - Session-based authentication with secure token management
 
 **AI & Processing:**
 - **Vercel AI SDK** - LLM integration and streaming responses

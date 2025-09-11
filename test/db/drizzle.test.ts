@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { user } from "@/db/schema";
 
 describe("Drizzle ORM", () => {
   test("should be able to import database instance", () => {
@@ -7,24 +7,24 @@ describe("Drizzle ORM", () => {
   });
 
   test("should be able to import schema", () => {
-    expect(users).toBeDefined();
-    expect(users.id).toBeDefined();
-    expect(users.email).toBeDefined();
-    expect(users.name).toBeDefined();
+    expect(user).toBeDefined();
+    expect(user.id).toBeDefined();
+    expect(user.email).toBeDefined();
+    expect(user.name).toBeDefined();
   });
 
   // Note: These tests require the database to be set up
   // Uncomment when ready to test actual database operations
   
   /*
-  test("should be able to query users table", async () => {
-    const result = await db.select().from(users).limit(1);
+  test("should be able to query user table", async () => {
+    const result = await db.select().from(user).limit(1);
     expect(Array.isArray(result)).toBe(true);
   });
 
   test("should be able to insert and delete a test user", async () => {
     // Insert test user
-    const [insertedUser] = await db.insert(users).values({
+    const [insertedUser] = await db.insert(user).values({
       name: "Test User",
       email: "test@example.com"
     }).returning();
@@ -34,7 +34,7 @@ describe("Drizzle ORM", () => {
     expect(insertedUser.name).toBe("Test User");
 
     // Clean up - delete test user
-    await db.delete(users).where(eq(users.id, insertedUser.id));
+    await db.delete(user).where(eq(user.id, insertedUser.id));
   });
   */
 });
