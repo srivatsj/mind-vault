@@ -41,6 +41,14 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  
+  /* Custom brand colors */
+  --color-brand-purple-light: var(--brand-purple-light);
+  --color-brand-purple: var(--brand-purple);
+  --color-brand-purple-dark: var(--brand-purple-dark);
+  --color-brand-green-light: var(--brand-green-light);
+  --color-brand-green: var(--brand-green);
+  --color-brand-green-dark: var(--brand-green-dark);
 }
 
 :root {
@@ -51,31 +59,39 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: oklch(0.376 0.179 302.71);  /* Darker purple primary color - matches sign-in */
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --accent: oklch(0.451 0.142 141.12);  /* Darker green accent color */
+  --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-1: oklch(0.502 0.193 302.71);  /* Purple */
+  --chart-2: oklch(0.544 0.161 141.12);  /* Green */
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: hsl(0 0% 98%);
-  --sidebar-foreground: hsl(240 5.3% 26.1%);
-  --sidebar-primary: hsl(240 5.9% 10%);
-  --sidebar-primary-foreground: hsl(0 0% 98%);
-  --sidebar-accent: hsl(240 4.8% 95.9%);
-  --sidebar-accent-foreground: hsl(240 5.9% 10%);
-  --sidebar-border: hsl(220 13% 91%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+  --sidebar: oklch(0.376 0.179 302.71);  /* Purple background matching brand */
+  --sidebar-foreground: oklch(0.985 0.02 302.71);  /* Light purple foreground */
+  --sidebar-primary: oklch(0.985 0 0);  /* White for primary elements */
+  --sidebar-primary-foreground: oklch(0.376 0.179 302.71);  /* Purple text on white */
+  --sidebar-accent: oklch(0.451 0.15 302.71);  /* Darker purple for accents */
+  --sidebar-accent-foreground: oklch(0.985 0.02 302.71);  /* Light purple text */
+  --sidebar-border: oklch(0.451 0.15 302.71);  /* Purple borders */
+  --sidebar-ring: oklch(0.544 0.161 141.12);  /* Green ring for focus */
+  
+  /* Custom brand colors - matching sign-in page */
+  --brand-purple-light: oklch(0.502 0.193 302.71);  /* Purple 600 */
+  --brand-purple: oklch(0.376 0.179 302.71);        /* Purple 700 - matches sign-in */
+  --brand-purple-dark: oklch(0.294 0.164 302.71);   /* Purple 800 */
+  --brand-green-light: oklch(0.544 0.161 141.12);   /* Green 600 */
+  --brand-green: oklch(0.451 0.142 141.12);         /* Green 700 */
+  --brand-green-dark: oklch(0.378 0.124 141.12);    /* Green 800 */
 }
 
 .dark {
@@ -85,31 +101,39 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: oklch(0.649 0.157 302.71);  /* Lighter purple for dark mode */
+  --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --accent: oklch(0.691 0.131 141.12);  /* Lighter green for dark mode */
+  --accent-foreground: oklch(0.145 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-1: oklch(0.649 0.157 302.71);  /* Purple */
+  --chart-2: oklch(0.691 0.131 141.12);  /* Green */
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: hsl(240 5.9% 10%);
-  --sidebar-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-primary: hsl(224.3 76.3% 48%);
-  --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(240 3.7% 15.9%);
-  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-border: hsl(240 3.7% 15.9%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+  --sidebar: oklch(0.294 0.164 302.71);  /* Dark purple background */
+  --sidebar-foreground: oklch(0.985 0.02 302.71);  /* Light purple foreground */
+  --sidebar-primary: oklch(0.502 0.193 302.71);  /* Lighter purple for primary */
+  --sidebar-primary-foreground: oklch(0.985 0 0);  /* White text */
+  --sidebar-accent: oklch(0.376 0.179 302.71);  /* Medium purple for accents */
+  --sidebar-accent-foreground: oklch(0.985 0.02 302.71);  /* Light purple text */
+  --sidebar-border: oklch(0.376 0.179 302.71);  /* Purple borders */
+  --sidebar-ring: oklch(0.544 0.161 141.12);  /* Green ring for focus */
+  
+  /* Dark mode brand colors - slightly lighter for better contrast */
+  --brand-purple-light: oklch(0.755 0.133 302.71);  /* Purple 300 */
+  --brand-purple: oklch(0.649 0.157 302.71);        /* Purple 400 */
+  --brand-purple-dark: oklch(0.502 0.193 302.71);   /* Purple 600 */
+  --brand-green-light: oklch(0.797 0.107 141.12);   /* Green 300 */
+  --brand-green: oklch(0.691 0.131 141.12);         /* Green 400 */
+  --brand-green-dark: oklch(0.544 0.161 141.12);    /* Green 600 */
 }
 
 @layer base {
@@ -118,5 +142,20 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .bg-radial {
+    background: radial-gradient(circle, var(--tw-gradient-from, transparent), var(--tw-gradient-to, transparent));
+  }
+  
+  /* Ensure gradient variables work in Tailwind v4 */
+  .from-purple-700 {
+    --tw-gradient-from: rgb(126 34 206);
+  }
+  
+  .to-purple-900 {
+    --tw-gradient-to: rgb(88 28 135);
   }
 }

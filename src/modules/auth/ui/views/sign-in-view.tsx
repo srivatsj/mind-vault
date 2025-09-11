@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
-import { OctagonAlertIcon } from "lucide-react";
+import { OctagonAlertIcon, Brain } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -184,8 +184,13 @@ export const SignInView = () => {
           </Form>
 
           <div className="bg-radial from-purple-700 to-purple-900 relative hidden md:flex flex-col gap-y-4 items-center justify-center">
-            <img src={"/logo.svg"} alt="Image" className="h-[92px] w-[92px]" />
-            <p className="text-2xl font-semibold text-white">Meet.AI</p>
+            <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20">
+              <Brain className="h-12 w-12 text-white" />
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-white">MindVault</p>
+              <p className="text-sm text-white/80 mt-1">AI Knowledge Hub</p>
+            </div>
           </div>
         </CardContent>
       </Card>
