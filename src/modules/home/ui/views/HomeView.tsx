@@ -4,80 +4,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarRail,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import {
-  Brain,
-  Home,
-  Library,
-  MessageSquare,
-  Plus,
   Search,
-  Settings,
-  Tag,
-  User,
   Video,
   FileText,
-  BarChart3,
+  Library,
+  MessageSquare,
+  Tag,
+  Brain,
   Clock,
 } from "lucide-react";
-
-const sidebarItems = [
-  {
-    title: "Dashboard",
-    icon: Home,
-    url: "/",
-  },
-  {
-    title: "Add Content",
-    icon: Plus,
-    url: "/add",
-  },
-  {
-    title: "Library",
-    icon: Library,
-    url: "/library",
-  },
-  {
-    title: "Chat",
-    icon: MessageSquare,
-    url: "/chat",
-  },
-  {
-    title: "Categories",
-    icon: Tag,
-    url: "/categories",
-  },
-  {
-    title: "Analytics",
-    icon: BarChart3,
-    url: "/analytics",
-  },
-];
-
-const bottomItems = [
-  {
-    title: "Settings",
-    icon: Settings,
-    url: "/settings",
-  },
-];
 
 export const HomeView = () => {
   const router = useRouter();
@@ -92,107 +30,35 @@ export const HomeView = () => {
   }
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <Sidebar variant="inset">
-          <SidebarHeader className="border-b border-sidebar-border/50">
-            <div className="flex items-center gap-3 px-3 py-4">
-              <div className="p-2 rounded-lg bg-sidebar-primary">
-                <Brain className="h-5 w-5 text-sidebar-primary-foreground" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-lg text-sidebar-primary">MindVault</span>
-                <span className="text-xs text-sidebar-foreground/70">AI Knowledge Hub</span>
-              </div>
+    <div className="min-h-screen bg-background">
+      {/* Top Bar */}
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b">
+        <div className="flex items-center justify-between w-full px-4">
+          <div className="flex items-center gap-2">
+            <h1 className="font-semibold">Dashboard</h1>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <div className="relative max-w-sm">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search your knowledge..."
+                className="pl-8"
+              />
             </div>
-          </SidebarHeader>
-          
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupLabel>Main</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {sidebarItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={item.url === "/"}
-                      >
-                        <a href={item.url}>
-                          <item.icon />
-                          <span>{item.title}</span>
-                        </a>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-          
-          <SidebarFooter>
-            <SidebarMenu>
-              {bottomItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() =>
-                    authClient.signOut({
-                      fetchOptions: {
-                        onSuccess: () => router.push("/sign-in"),
-                      },
-                    })
-                  }
-                >
-                  <User />
-                  <span>Sign Out</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarFooter>
-          
-          <SidebarRail />
-        </Sidebar>
-        
-        <SidebarInset>
-          {/* Top Bar */}
-          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-            <div className="flex items-center justify-between w-full px-4">
-              <div className="flex items-center gap-2">
-                <SidebarTrigger className="-ml-1" />
-                <div className="h-4 w-px bg-sidebar-border" />
-                <h1 className="font-semibold">Dashboard</h1>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <div className="relative max-w-sm">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search your knowledge..."
-                    className="pl-8"
-                  />
-                </div>
-                
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={session.user.image || undefined} />
-                  <AvatarFallback>
-                    {session.user.name?.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-            </div>
-          </header>
-          
-          {/* Main Content */}
-          <div className="flex-1 px-4 py-6">
+            
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={session.user.image || undefined} />
+              <AvatarFallback>
+                {session.user.name?.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
+      </header>
+      
+      {/* Main Content */}
+      <div className="flex-1 px-6 py-6">
             <div className="grid gap-6">
               {/* Welcome Section */}
               <div className="flex flex-col gap-2">
@@ -206,7 +72,10 @@ export const HomeView = () => {
               
               {/* Quick Actions */}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-primary group border-primary/10 bg-gradient-to-br from-primary/5 to-primary/10">
+                <Card 
+                  className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-primary group border-primary/10 bg-gradient-to-br from-primary/5 to-primary/10"
+                  onClick={() => router.push("/add")}
+                >
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
                       Add YouTube Video
@@ -378,9 +247,7 @@ export const HomeView = () => {
                 </Card>
               </div>
             </div>
-          </div>
-        </SidebarInset>
       </div>
-    </SidebarProvider>
+    </div>
   );
 };

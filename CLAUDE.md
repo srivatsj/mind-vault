@@ -117,3 +117,47 @@ npm run db:studio
 - Path aliases are configured with `@/*` mapping to the src directory (`@/*` → `./src/*`)
 - All TypeScript files use strict mode and noEmit is enabled (Next.js handles compilation)
 - **Documentation must be updated in `docs/` folder after implementing features and before git commits**
+- **DO NOT start development servers** - User manages their own server instances
+
+## YouTube Video Processing Feature
+
+### Architecture Overview
+- **Server Actions**: Uses Next.js Server Actions instead of API routes for better type safety and performance
+- **DAO Pattern**: Database operations abstracted through Data Access Objects in `src/modules/video/data/`
+- **Service Layer**: Business logic separated into services in `src/modules/video/services/`
+- **Module Structure**: Features organized by domain in `src/modules/` with clear separation of concerns
+
+### Current Implementation Status
+- ✅ Database schema with video summaries, tags, categories, and keyframes tables
+- ✅ YouTube API integration for metadata extraction (requires `YOUTUBE_API_KEY` in `.env.local`)
+- ✅ URL input page with validation at `/add`
+- ✅ Video processing status page at `/videos/[id]`
+- ✅ Persistent sidebar layout with centered content using `AppLayout` component
+- ✅ Server Actions for video processing with proper error handling
+- ⏳ Background processing pipeline (Inngest + yt-dlp + ffmpeg) - pending
+- ⏳ AI summarization and keyframe extraction - pending
+
+### Key Files
+```
+src/app/
+├── (auth)/                           # Authentication pages
+├── (dashboard)/                      # All authenticated pages with shared layout
+│   ├── layout.tsx                    # Persistent sidebar + authentication
+│   ├── page.tsx                      # Dashboard home
+│   ├── add/page.tsx                  # Video URL input
+│   └── videos/[id]/page.tsx          # Video processing status
+└── layout.tsx                        # Root application layout
+
+src/modules/video/
+├── actions/video.actions.ts          # Server Actions for video processing
+├── data/video-summary.dao.ts         # Database access layer
+├── services/youtube.service.ts       # YouTube API integration
+└── ui/views/
+    ├── AddVideoView.tsx              # Video URL input form
+    └── VideoProcessingView.tsx       # Processing status display
+```
+
+### Environment Variables Required
+```bash
+YOUTUBE_API_KEY=your_youtube_data_api_v3_key
+```

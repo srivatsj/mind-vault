@@ -25,10 +25,24 @@
 **AI & Processing:**
 - **Vercel AI SDK** - LLM integration and streaming responses
 - **Inngest** - Background job processing for AI workflows
-- **YouTube API** - Video metadata and transcript extraction
+- **YouTube API** - Video metadata and transcript extraction ([Implementation Details](./youtube-video-feature-implementation.md))
 - **yt-dlp** - Video downloading and processing
 - **FFmpeg** - Video frame extraction and processing
 
 **Storage:**
 - **Vercel Blob Storage** - Images, diagrams, and video frames
 - **PostgreSQL** - Structured data and metadata
+
+## Implementation Documentation
+
+This design document serves as the authoritative reference for all implementation decisions. Detailed implementation guides for specific features:
+
+### Video Processing Pipeline
+- **[YouTube Video Feature Implementation](./youtube-video-feature-implementation.md)** - Complete implementation guide for YouTube URL processing, metadata extraction, and video preparation for AI analysis
+
+### Upcoming Implementation Guides
+- **Database Setup & Migrations** - Drizzle ORM configuration and schema management
+- **Authentication System** - BetterAuth setup and security implementation  
+- **AI Integration** - Vercel AI SDK setup and prompt engineering
+- **Background Processing** - Inngest job configuration and error handling
+- **Storage Management** - Vercel Blob configuration and file handling
