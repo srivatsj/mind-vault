@@ -2,9 +2,9 @@
 
 ## Overview
 
-This document provides detailed implementation documentation for the YouTube video processing feature of MindVault. This feature allows users to input YouTube URLs, extract metadata, and prepare videos for AI-powered summarization.
+Complete implementation guide for the YouTube video processing feature - from URL input to AI-ready video preparation. This feature implements the core video processing pipeline with metadata extraction, status tracking, and library management.
 
-> **Note**: This document implements the specifications defined in the [Technical Design Document](./design.md). Refer to the design document for architectural decisions and technology stack rationale.
+> **Architecture Reference**: Implementation follows patterns defined in [Technical Design](./design.md)
 
 ## Architecture
 
@@ -100,105 +100,71 @@ src/modules/video/
 - Polling mechanism for status updates
 - Link to original YouTube video
 
-## User Flow
+## User Workflow
 
-1. **URL Input** (`/add`):
-   - User pastes YouTube URL
-   - Real-time validation provides immediate feedback
-   - Thumbnail preview appears for valid URLs
-   - Form submission triggers Server Action
+### 1. Video Addition (`/add`)
+- User inputs YouTube URL with real-time validation
+- Instant thumbnail preview for valid URLs
+- Form submission triggers `processYouTubeVideo` Server Action
+- Duplicate detection prevents re-processing same video
 
-2. **Processing** (`/videos/{id}`):
-   - Server Action validates URL and extracts video ID
-   - YouTube API fetches video metadata
-   - Database record created with "pending" status
-   - User redirected to processing page
-   - Real-time status updates via polling
+### 2. Processing Status (`/videos/[id]`)
+- Displays video metadata (title, thumbnail, channel, duration)
+- Real-time status updates via Server-Sent Events (SSE)
+- Progress indicators show processing steps
+- Error handling with retry options
 
-3. **Status Display**:
-   - Video information displayed with thumbnail
-   - Processing steps shown with progress indicators
-   - Error handling for failed operations
-   - Link to continue to summary editing (future)
+### 3. Library Management (`/library`)
+- Grid view of all processed/queued videos
+- Search across titles, channels, descriptions
+- Filter by processing status (pending, processing, completed, failed)
+- Direct navigation to processing pages or YouTube links
 
-## Environment Setup
+### 4. Real-time Updates
+- SSE connection provides live status updates
+- Processing status changes reflected immediately
+- Graceful handling of connection issues
 
-### Required Environment Variables
+## Setup & Configuration
+
+### Environment Variables
 ```bash
 YOUTUBE_API_KEY=your_youtube_data_api_v3_key
 ```
 
-### Database Commands
-```bash
-npm run db:push      # Apply schema changes
-npm run db:studio    # Open database browser
-```
+### Database Schema
+The implementation includes comprehensive tables:
+- `video_summary`: Core video records with processing status
+- `tag` & `category`: Content organization with many-to-many relationships
+- `keyframe`: Video frame extraction for AI analysis
 
-## Features Implemented
+## Implementation Status
 
-✅ **Core Functionality**:
+### ✅ Completed Features
+
+**Core Pipeline**:
 - YouTube URL validation and video ID extraction
-- YouTube API integration for metadata fetching
+- YouTube API integration for metadata fetching  
 - Database schema with comprehensive relationships
-- Server Actions with type safety
-- Persistent sidebar layout with full-width content
-- Real-time thumbnail preview
-- Processing status tracking
+- Server Actions with DAO pattern and type safety
 
-✅ **User Experience**:
-- Instant URL validation feedback
-- Thumbnail preview before processing
-- Loading states and error handling
-- Responsive design with consistent branding
-- Duplicate detection (won't process same video twice)
+**User Interface**:
+- URL input page (`/add`) with real-time validation
+- Processing status page (`/videos/[id]`) with SSE updates
+- Library page (`/library`) with search and filtering
+- Persistent dashboard layout with sidebar navigation
+- Thumbnail previews and responsive design
 
-✅ **Code Quality**:
-- TypeScript throughout with strict typing
-- ESLint compliance
-- Modular architecture with separation of concerns
-- Proper error handling and validation
+**Technical Excellence**:
+- TypeScript strict mode throughout
+- ESLint compliance and Next.js Image optimization
+- Proper error handling and user authentication
+- Duplicate detection and processing status management
 
-## Next Steps
-
-⏳ **Pending Implementation**:
+### ⏳ Next Implementation Phase
 - Background job processing with Inngest
 - Video transcript extraction using yt-dlp
 - Keyframe extraction with FFmpeg
 - AI summarization with Vercel AI SDK
 - Rich text editor for summary editing
-- Library page for browsing saved summaries
-- Vercel Blob Storage for keyframes and diagrams
-
-## Technical Decisions
-
-### Why Server Actions over API Routes?
-- **Type Safety**: Direct TypeScript integration without boilerplate
-- **Performance**: No extra HTTP round trip, faster execution  
-- **Developer Experience**: Less code, better error handling
-- **Security**: Automatic CSRF protection
-
-### Why DAO Pattern?
-- **Separation of Concerns**: Database logic isolated from business logic
-- **Testability**: Easy to mock for unit tests
-- **Maintainability**: Changes to database operations centralized
-- **Type Safety**: Consistent interfaces across data operations
-
-### Why Module Structure?
-- **Scalability**: Each feature self-contained and independent
-- **Team Development**: Different developers can work on different modules
-- **Code Organization**: Clear boundaries between features
-- **Reusability**: Services and DAOs can be shared across features
-
-## Performance Considerations
-
-- **YouTube Thumbnails**: Uses direct YouTube thumbnail URLs (no API quota)
-- **Database Queries**: Optimized with proper indexing on user_id and youtube_id
-- **Real-time Updates**: Polling interval optimized for UX vs. server load
-- **Error Handling**: Graceful fallbacks for API failures
-
-## Security Measures
-
-- **User Authentication**: All operations require valid session
-- **Data Scoping**: Users can only access their own video summaries
-- **Input Validation**: Server-side validation of all inputs
-- **SQL Injection Prevention**: Drizzle ORM provides safe parameterized queries
+- Vercel Blob Storage integration

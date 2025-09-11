@@ -1,48 +1,56 @@
-# Technical Design: AI-Powered Learning & Second Brain Platform
+# Technical Design: Mind-Vault Platform
 
-## 1. System Architecture Overview
+## System Architecture
 
-### 1.1 Technology Stack
+### Core Technology Stack
 
-**Frontend & Framework:**
-- **Next.js 15** - App Router with React 19
-- **TypeScript** - Type safety across the application
-- **Tailwind CSS** - Utility-first styling
-- **shadcn/ui** - Consistent, accessible UI components
+**Application Framework:**
+- **Next.js 15** - App Router with React 19, TypeScript
+- **Tailwind CSS v4** - Utility-first styling with shadcn/ui components
 
-**Backend & Database:**
-- **Drizzle ORM** - Type-safe database operations ([Setup Guide](./drizzle-setup.md))
-- **PostgreSQL on Neon** - Serverless PostgreSQL database
-- **Zod** - Runtime type validation and schema definition
+**Data & Authentication:**
+- **PostgreSQL on Neon** - Serverless database with Drizzle ORM
+- **BetterAuth** - Session-based authentication with social login support
 
-**Authentication & Security:**
-- **BetterAuth** - Modern authentication with session management
-  - Social login (GitHub, Google)
-  - Email/password authentication
-  - Drizzle adapter integration with PostgreSQL
-  - Session-based authentication with secure token management
+**AI & Media Processing:**
+- **Vercel AI SDK** - LLM integration for content summarization
+- **Inngest** - Background job processing and workflow orchestration
+- **YouTube API** - Video metadata and transcript extraction
+- **yt-dlp + FFmpeg** - Video processing and keyframe extraction
 
-**AI & Processing:**
-- **Vercel AI SDK** - LLM integration and streaming responses
-- **Inngest** - Background job processing for AI workflows
-- **YouTube API** - Video metadata and transcript extraction ([Implementation Details](./youtube-video-feature-implementation.md))
-- **yt-dlp** - Video downloading and processing
-- **FFmpeg** - Video frame extraction and processing
+**Storage & Assets:**
+- **Vercel Blob Storage** - Media files and extracted assets
+- **PostgreSQL** - Structured data and relationships
 
-**Storage:**
-- **Vercel Blob Storage** - Images, diagrams, and video frames
-- **PostgreSQL** - Structured data and metadata
+## Architectural Patterns
 
-## Implementation Documentation
+### Server Actions + DAO Pattern
+- **Server Actions** replace API routes for type safety and performance
+- **DAO (Data Access Object)** pattern abstracts database operations
+- **Service Layer** contains business logic and external API integrations
+- **Module Organization** features grouped by domain in `src/modules/`
 
-This design document serves as the authoritative reference for all implementation decisions. Detailed implementation guides for specific features:
+### Authentication & Security
+- Session-based authentication with BetterAuth
+- User-scoped data access with proper authorization
+- Input validation with Zod schemas
+- CSRF protection via Server Actions
 
-### Video Processing Pipeline
-- **[YouTube Video Feature Implementation](./youtube-video-feature-implementation.md)** - Complete implementation guide for YouTube URL processing, metadata extraction, and video preparation for AI analysis
+### Real-time Updates
+- Server-Sent Events (SSE) for live status updates
+- Optimistic UI updates with React transitions
+- Graceful error handling and retry mechanisms
 
-### Upcoming Implementation Guides
-- **Database Setup & Migrations** - Drizzle ORM configuration and schema management
-- **Authentication System** - BetterAuth setup and security implementation  
-- **AI Integration** - Vercel AI SDK setup and prompt engineering
-- **Background Processing** - Inngest job configuration and error handling
-- **Storage Management** - Vercel Blob configuration and file handling
+## Feature Implementation Guides
+
+### Core Infrastructure
+- **[Database Setup](./database-setup.md)** - Drizzle ORM with PostgreSQL, schema management, DAO patterns
+- **[Authentication Setup](./authentication-setup.md)** - BetterAuth integration, session management, security patterns
+
+### Video Processing Pipeline  
+- **[YouTube Video Processing](./youtube-video-feature-implementation.md)** - URL input, metadata extraction, status tracking, library management
+
+### Upcoming Features
+- **Background Jobs** - Inngest setup for video processing workflows
+- **AI Integration** - Vercel AI SDK for content summarization
+- **Storage Management** - Blob storage for media assets
