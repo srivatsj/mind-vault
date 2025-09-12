@@ -19,7 +19,8 @@ npm start           # Start production server
 # Code Quality
 npm run lint        # Run ESLint
 npm run lint:fix    # Auto-fix ESLint issues
-npm test           # Run tests
+npm run test:unit  # Run unit tests
+npm run test:integration # Run integration tests
 npx tsc --noEmit   # TypeScript type checking
 
 # Database

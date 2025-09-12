@@ -10,15 +10,12 @@ const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'node',
   testMatch: [
-    '<rootDir>/test/**/*.test.{js,ts}',
-    '<rootDir>/integration/**/*.test.{js,ts}'
+    '<rootDir>/unit_tests/**/*.test.{js,ts}',
+    '<rootDir>/integration_tests/**/*.test.{js,ts}'
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  transformIgnorePatterns: [
-    'node_modules/(?!(better-auth|@noble/ciphers|@noble/hashes|@noble/curves)/)',
-  ],
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

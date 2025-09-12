@@ -10,6 +10,16 @@
  * 6. Processing completion
  */
 
+// Mock the auth module
+jest.mock('better-auth', () => ({}));
+jest.mock('@/lib/auth', () => ({
+  auth: {
+    api: {
+      getSession: jest.fn()
+    }
+  }
+}));
+
 import { jest, describe, beforeEach, afterEach, it, expect } from '@jest/globals';
 
 // Types for test objects
@@ -24,6 +34,7 @@ interface MockKeyframe {
 interface MockData {
   status: string;
 }
+
 import { processYouTubeVideo, getVideoSummary } from '@/modules/video/actions/video.actions';
 import { 
   mockYouTubeService,
@@ -43,15 +54,6 @@ import {
   validYouTubeUrls,
   mockTranscriptData
 } from './fixtures/video-data';
-
-// Mock the auth module
-jest.mock('@/lib/auth', () => ({
-  auth: {
-    api: {
-      getSession: jest.fn()
-    }
-  }
-}));
 
 // Mock the services
 jest.mock('@/modules/video/services/youtube.service');

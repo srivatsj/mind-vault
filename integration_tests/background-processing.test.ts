@@ -445,8 +445,9 @@ describe('Background Video Processing Pipeline', () => {
       };
 
       // Stage 4: Asset Upload
+      const keyframesUploadResult = await mockServices.storage.uploadKeyframes();
       const uploadResults = {
-        keyframes: mockServices.storage.uploadKeyframes.getMockReturnValue(),
+        keyframes: keyframesUploadResult,
         transcript: await mockServices.storage.uploadTranscript(),
         analysis: await mockServices.storage.uploadAnalysisResults()
       };

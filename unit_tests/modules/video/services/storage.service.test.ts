@@ -1,4 +1,5 @@
 import { StorageService } from '@/modules/video/services/storage.service';
+import { getStorageConfig } from '@/lib/config';
 
 // Mock Vercel Blob functions
 jest.mock('@vercel/blob', () => ({
@@ -7,6 +8,11 @@ jest.mock('@vercel/blob', () => ({
   list: jest.fn(),
   head: jest.fn()
 }));
+
+jest.mock('@/lib/config');
+
+const mockedGetStorageConfig = getStorageConfig as jest.Mock;
+
 
 describe('StorageService', () => {
   describe('getContentType', () => {
@@ -26,9 +32,7 @@ describe('StorageService', () => {
   describe('Storage configuration validation', () => {
     it('should throw error when blob token is not configured', async () => {
       // Mock the config to return no token
-      jest.doMock('@/lib/config', () => ({
-        getStorageConfig: () => ({ vercelBlobToken: undefined })
-      }));
+      mockedGetStorageConfig.mockReturnValue({ vercelBlobToken: undefined });
 
       await expect(
         StorageService.uploadBuffer(Buffer.from('test'), 'test.txt')
@@ -38,6 +42,9 @@ describe('StorageService', () => {
 
   // Skip integration tests that require actual blob storage
   describe.skip('Integration Tests', () => {
+    beforeEach(() => {
+      mockedGetStorageConfig.mockReturnValue({ vercelBlobToken: 'mock-token' });
+    });
     // These tests require actual Vercel Blob storage setup and API keys
     
     it('should upload file successfully', async () => {

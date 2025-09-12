@@ -105,10 +105,25 @@ export function mockAIService() {
   AIService.validateKeyframeIntervals.mockImplementation((...args: unknown[]) => {
     const intervals = args[0] as Array<{ timestamp: number; [key: string]: unknown }>;
     const duration = args[1] as number;
-    return intervals.filter((interval: { timestamp: number }) => 
-      interval.timestamp >= 0 && 
-      interval.timestamp < duration
-    );
+    const minGap = (args[2] as number) || 0;
+
+    const sorted = intervals
+      .filter(kf => kf.timestamp >= 0 && kf.timestamp < duration)
+      .sort((a, b) => a.timestamp - b.timestamp);
+
+    if (minGap === 0) {
+      return sorted;
+    }
+
+    const filtered = [];
+    let lastTimestamp = -Infinity;
+    for (const kf of sorted) {
+      if (kf.timestamp - lastTimestamp >= minGap) {
+        filtered.push(kf);
+        lastTimestamp = kf.timestamp;
+      }
+    }
+    return filtered;
   });
 
   return AIService;
@@ -150,7 +165,7 @@ export function mockStorageService() {
 
   StorageService.uploadKeyframes.mockResolvedValue({
     success: true,
-    keyframes: [
+    uploads: [
       { url: 'https://blob.vercel-storage.com/keyframe1.jpg', filename: 'keyframe_000000.jpg', size: 1024 },
       { url: 'https://blob.vercel-storage.com/keyframe2.jpg', filename: 'keyframe_000030.jpg', size: 1024 }
     ]
