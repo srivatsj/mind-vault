@@ -253,7 +253,7 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
                 
                 {summary.processingStatus === "completed" && (
                   <Button
-                    onClick={() => router.push(`/videos/${summaryId}/edit`)}
+                    onClick={() => router.push(`/videos/${summaryId}/summary`)}
                     className="w-full"
                   >
                     View Summary

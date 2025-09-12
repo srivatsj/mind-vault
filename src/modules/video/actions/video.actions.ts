@@ -131,8 +131,8 @@ export async function getVideoSummary(summaryId: string): Promise<GetVideoSummar
       };
     }
 
-    // Fetch video summary
-    const summary = await VideoSummaryDao.findById(summaryId, session.user.id);
+    // Fetch video summary with all relations
+    const summary = await VideoSummaryDao.findByIdWithRelations(summaryId, session.user.id);
 
     if (!summary) {
       return {
@@ -180,6 +180,68 @@ export async function getAllVideoSummaries(): Promise<GetVideoSummaryResult> {
 
   } catch (error) {
     console.error("Error fetching video summaries:", error);
+    
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "An unexpected error occurred"
+    };
+  }
+}
+
+export interface UpdateSummaryResult {
+  success: boolean;
+  error?: string;
+}
+
+export async function updateVideoSummary(summaryId: string, updatedContent: string): Promise<UpdateSummaryResult> {
+  try {
+    // Get authenticated user
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      return {
+        success: false,
+        error: "Authentication required"
+      };
+    }
+
+    // Verify the user owns this video summary
+    const existingSummary = await VideoSummaryDao.findById(summaryId, session.user.id);
+    if (!existingSummary) {
+      return {
+        success: false,
+        error: "Video summary not found or access denied"
+      };
+    }
+
+    // Update the AI generated content
+    const currentAIContent = existingSummary.aiGeneratedContent || {};
+    const currentSummary = currentAIContent.summary;
+    
+    const updatedAIContent = {
+      ...currentAIContent,
+      summary: currentSummary ? {
+        ...currentSummary,
+        summary: updatedContent,
+      } : {
+        summary: updatedContent,
+        keyPoints: [],
+        topics: [],
+        difficulty: "Unknown",
+        estimatedReadTime: 0
+      }
+    };
+
+    await VideoSummaryDao.updateAIContent(summaryId, updatedAIContent);
+
+    return {
+      success: true
+    };
+
+  } catch (error) {
+    console.error("Error updating video summary:", error);
     
     return {
       success: false,

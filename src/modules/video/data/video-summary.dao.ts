@@ -100,6 +100,65 @@ export class VideoSummaryDao {
     return summary as VideoSummaryWithRelations;
   }
 
+  /**
+   * Get video summary with all related data (tags, categories, keyframes)
+   */
+  static async findByIdWithRelations(id: string, userId: string): Promise<VideoSummaryWithRelations | null> {
+    const summary = await db.query.videoSummary.findFirst({
+      where: and(
+        eq(videoSummary.id, id),
+        eq(videoSummary.userId, userId)
+      ),
+    });
+
+    if (!summary) return null;
+
+    // Get tags
+    const summaryTags = await db
+      .select({
+        id: tag.id,
+        name: tag.name,
+        color: tag.color,
+      })
+      .from(videoSummaryTag)
+      .innerJoin(tag, eq(videoSummaryTag.tagId, tag.id))
+      .where(eq(videoSummaryTag.videoSummaryId, id));
+
+    // Get categories
+    const summaryCategories = await db
+      .select({
+        id: category.id,
+        name: category.name,
+        color: category.color,
+      })
+      .from(videoSummaryCategory)
+      .innerJoin(category, eq(videoSummaryCategory.categoryId, category.id))
+      .where(eq(videoSummaryCategory.videoSummaryId, id));
+
+    // Get keyframes
+    const summaryKeyframes = await db
+      .select()
+      .from(keyframe)
+      .where(eq(keyframe.videoSummaryId, id))
+      .orderBy(keyframe.timestamp);
+
+    return {
+      ...summary,
+      tags: summaryTags,
+      categories: summaryCategories,
+      keyframes: summaryKeyframes.map(kf => ({
+        id: kf.id,
+        blobUrl: kf.blobUrl,
+        timestamp: kf.timestamp,
+        description: kf.description,
+        confidence: kf.confidence ? kf.confidence / 100 : undefined,
+        category: kf.category,
+        aiReason: kf.aiReason,
+        fileSize: kf.fileSize
+      }))
+    } as VideoSummaryWithRelations;
+  }
+
   static async findByUserAndYouTubeId(userId: string, youtubeId: string): Promise<VideoSummaryWithRelations | null> {
     const summary = await db.query.videoSummary.findFirst({
       where: and(
