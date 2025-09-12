@@ -5,10 +5,12 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { VideoSummaryDao } from "../data/video-summary.dao";
 import { YouTubeService } from "../services/youtube.service";
+import { JobService } from "../services/job.service";
 
 export interface ProcessVideoResult {
   success: boolean;
   summaryId?: string;
+  eventId?: string;
   error?: string;
 }
 
@@ -74,13 +76,35 @@ export async function processYouTubeVideo(youtubeUrl: string): Promise<ProcessVi
       thumbnailUrl: videoInfo.thumbnailUrl,
     });
 
-    // TODO: Trigger background processing job
-    // This will be implemented when we add Inngest
-    console.log(`Video processing job queued for summary ID: ${summaryId}`);
+    // Trigger background processing job
+    const { eventId } = await JobService.triggerVideoProcessing({
+      videoSummaryId: summaryId,
+      userId: session.user.id,
+      youtubeUrl,
+      youtubeId: videoId,
+      title: videoInfo.title,
+      description: videoInfo.description,
+      channelName: videoInfo.channelTitle,
+      duration: videoInfo.duration,
+      thumbnailUrl: videoInfo.thumbnailUrl,
+    });
+
+    // Update the record with the job event ID for tracking
+    await VideoSummaryDao.updateProcessingStatus(
+      summaryId,
+      'pending',
+      undefined,
+      0,
+      'Queued for processing',
+      eventId
+    );
+
+    console.log(`Video processing job queued for summary ID: ${summaryId}, event ID: ${eventId}`);
 
     return {
       success: true,
-      summaryId
+      summaryId,
+      eventId
     };
 
   } catch (error) {

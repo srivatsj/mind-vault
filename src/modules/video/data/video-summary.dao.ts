@@ -24,7 +24,7 @@ export interface UpdateVideoSummaryInput {
     diagrams?: string[];
     suggestedTags?: string[];
   };
-  processingStatus?: "pending" | "processing" | "completed" | "failed";
+  processingStatus?: "pending" | "extracting_transcript" | "extracting_keyframes" | "uploading_assets" | "generating_summary" | "completed" | "failed";
   processingError?: string;
 }
 
@@ -41,12 +41,31 @@ export interface VideoSummaryWithRelations {
   transcript: string | null;
   summary: string | null;
   aiGeneratedContent: {
-    summary?: string;
-    keyPoints?: string[];
+    summary?: {
+      summary: string;
+      keyPoints: string[];
+      topics: string[];
+      difficulty: string;
+      estimatedReadTime: number;
+    };
+    keyframeIntervals?: Array<{
+      timestamp: number;
+      reason: string;
+      confidence: number;
+      category: string;
+    }>;
+    tags?: string[];
+    categories?: string[];
     diagrams?: string[];
     suggestedTags?: string[];
   } | null;
-  processingStatus: "pending" | "processing" | "completed" | "failed";
+  keyframeIntervals?: Array<{
+    timestamp: number;
+    reason: string;
+    confidence: number;
+    category: string;
+  }>;
+  processingStatus: "pending" | "extracting_transcript" | "extracting_keyframes" | "uploading_assets" | "generating_summary" | "completed" | "failed";
   processingError: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -106,12 +125,21 @@ export class VideoSummaryDao {
   static async update(input: UpdateVideoSummaryInput): Promise<void> {
     const { id, ...updateData } = input;
     
+    // Exclude aiGeneratedContent from spread and handle separately if needed
+    const { aiGeneratedContent, ...safeUpdateData } = updateData;
+    
+    const finalUpdateData: Record<string, unknown> = {
+      ...safeUpdateData,
+      updatedAt: new Date(),
+    };
+    
+    if (aiGeneratedContent) {
+      finalUpdateData.aiGeneratedContent = aiGeneratedContent;
+    }
+    
     await db
       .update(videoSummary)
-      .set({
-        ...updateData,
-        updatedAt: new Date(),
-      })
+      .set(finalUpdateData)
       .where(eq(videoSummary.id, id));
   }
 
@@ -142,16 +170,91 @@ export class VideoSummaryDao {
     });
   }
 
-  static async addKeyframe(videoSummaryId: string, blobUrl: string, timestamp: number, description?: string, transcriptSegment?: string): Promise<string> {
+  static async addKeyframe(
+    videoSummaryId: string, 
+    keyframeData: {
+      timestamp: number;
+      imageUrl: string;
+      thumbnailUrl?: string;
+      description?: string;
+      confidence?: number;
+      category?: string;
+      aiReason?: string;
+      fileSize?: number;
+    }
+  ): Promise<string> {
     const keyframeId = nanoid();
     await db.insert(keyframe).values({
       id: keyframeId,
       videoSummaryId,
-      blobUrl,
-      timestamp,
-      description,
-      transcriptSegment,
+      blobUrl: keyframeData.imageUrl,
+      thumbnailUrl: keyframeData.thumbnailUrl,
+      timestamp: keyframeData.timestamp,
+      description: keyframeData.description,
+      confidence: keyframeData.confidence ? Math.round(keyframeData.confidence * 100) : undefined,
+      category: keyframeData.category,
+      aiReason: keyframeData.aiReason,
+      fileSize: keyframeData.fileSize,
     });
     return keyframeId;
+  }
+
+  /**
+   * Update processing status
+   */
+  static async updateProcessingStatus(
+    id: string,
+    status: "pending" | "extracting_transcript" | "extracting_keyframes" | "uploading_assets" | "generating_summary" | "completed" | "failed",
+    error?: string,
+    progress?: number,
+    currentStep?: string,
+    jobEventId?: string
+  ): Promise<void> {
+    const updateData: Partial<typeof videoSummary.$inferInsert> = {
+      processingStatus: status,
+      updatedAt: new Date(),
+    };
+
+    if (error !== undefined) updateData.processingError = error;
+    if (progress !== undefined) updateData.processingProgress = progress;
+    if (currentStep !== undefined) updateData.currentStep = currentStep;
+    if (jobEventId !== undefined) updateData.jobEventId = jobEventId;
+
+    await db
+      .update(videoSummary)
+      .set(updateData)
+      .where(eq(videoSummary.id, id));
+  }
+
+  /**
+   * Update AI-generated content
+   */
+  static async updateAIContent(
+    id: string,
+    aiContent: {
+      summary?: {
+        summary: string;
+        keyPoints: string[];
+        topics: string[];
+        difficulty: string;
+        estimatedReadTime: number;
+      };
+      keyframeIntervals?: Array<{
+        timestamp: number;
+        reason: string;
+        confidence: number;
+        category: string;
+      }>;
+      tags?: string[];
+      categories?: string[];
+    }
+  ): Promise<void> {
+    await db
+      .update(videoSummary)
+      .set({
+        aiGeneratedContent: aiContent,
+        updatedAt: new Date(),
+      })
+      .where(eq(videoSummary.id, id));
   }
 }

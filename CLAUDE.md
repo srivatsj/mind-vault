@@ -68,9 +68,11 @@ docs/                       # Documentation
 
 ## Development Workflow
 
-1. Implement feature/change
-2. Update feature-specific and deign documentation in `docs/`
-3. Update implementation status below
+1. Implement feature/change 
+2. Always write code which passes linter and tsc checks
+3. Write unit and interation tests to verify feature works properly
+4. Update feature-specific and deign documentation in `docs/`
+5. Update implementation status below
 
 **Documentation Hierarchy**: CLAUDE.md (high-level) → design.md (architecture) → feature-specific.md (implementation details)
 

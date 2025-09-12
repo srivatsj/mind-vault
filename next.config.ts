@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react']
   },
   images: {
-    domains: ['i.ytimg.com'],
+    domains: ['i.ytimg.com', 'img.youtube.com'],
   },
 };
 

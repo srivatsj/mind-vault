@@ -76,15 +76,33 @@ export const videoSummary = pgTable("video_summary", {
   transcript: text("transcript"),
   summary: text("summary"),
   aiGeneratedContent: json("ai_generated_content").$type<{
-    summary?: string;
-    keyPoints?: string[];
+    summary?: {
+      summary: string;
+      keyPoints: string[];
+      topics: string[];
+      difficulty: string;
+      estimatedReadTime: number;
+    };
+    keyframeIntervals?: Array<{
+      timestamp: number;
+      reason: string;
+      confidence: number;
+      category: string;
+    }>;
+    tags?: string[];
+    categories?: string[];
     diagrams?: string[];
     suggestedTags?: string[];
   }>(),
   processingStatus: text("processing_status", { 
-    enum: ["pending", "processing", "completed", "failed"] 
+    enum: ["pending", "extracting_transcript", "extracting_keyframes", "uploading_assets", "generating_summary", "completed", "failed"] 
   }).default("pending").notNull(),
   processingError: text("processing_error"),
+  processingProgress: integer("processing_progress").default(0), // 0-100 percentage
+  currentStep: text("current_step"), // Human readable current operation
+  lastProcessedStep: text("last_processed_step"), // For resume capability
+  retryCount: integer("retry_count").default(0), // Automatic retry tracking
+  jobEventId: text("job_event_id"), // Inngest event ID for tracking
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -140,8 +158,13 @@ export const keyframe = pgTable("keyframe", {
     .notNull()
     .references(() => videoSummary.id, { onDelete: "cascade" }),
   blobUrl: text("blob_url").notNull(),
+  thumbnailUrl: text("thumbnail_url"), // Smaller thumbnail version
   timestamp: integer("timestamp").notNull(), // timestamp in video (seconds)
   description: text("description"),
   transcriptSegment: text("transcript_segment"),
+  confidence: integer("confidence"), // AI confidence score (0-100)
+  category: text("category"), // intro, main_point, demo, conclusion, etc.
+  aiReason: text("ai_reason"), // Why AI selected this keyframe
+  fileSize: integer("file_size"), // File size in bytes
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
