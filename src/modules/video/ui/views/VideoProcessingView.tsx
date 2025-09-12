@@ -149,10 +149,10 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
   const StatusIcon = statusInfo.icon;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="border-b">
-        <div className="flex h-16 items-center px-4">
+      <div className="border-b bg-background/95 backdrop-blur-sm">
+        <div className="flex h-16 items-center px-6">
           <Button
             variant="ghost"
             size="sm"
@@ -170,7 +170,7 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
       </div>
 
       {/* Main Content */}
-      <div className="flex justify-center px-4 py-8">
+      <div className="flex-1 flex justify-center px-6 py-8 overflow-y-auto">
         <div className="w-full max-w-4xl">
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Video Info */}

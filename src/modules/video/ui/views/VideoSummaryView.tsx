@@ -217,10 +217,10 @@ export const VideoSummaryView = ({ summaryId }: VideoSummaryViewProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="border-b">
-        <div className="container flex h-16 items-center px-4">
+      <div className="border-b bg-background/95 backdrop-blur-sm">
+        <div className="flex h-16 items-center px-6">
           <Button
             variant="ghost"
             size="sm"
@@ -261,7 +261,7 @@ export const VideoSummaryView = ({ summaryId }: VideoSummaryViewProps) => {
       </div>
 
       {/* Main Content */}
-      <div className="container max-w-7xl px-4 py-8">
+      <div className="flex-1 max-w-7xl mx-auto w-full px-6 py-8 overflow-y-auto">
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-8">

@@ -113,23 +113,23 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="flex min-h-screen w-full">
-        <Sidebar variant="inset" className="border-r">
-          <SidebarHeader className="border-b border-sidebar-border/50">
+      <div className="flex min-h-screen w-full bg-gradient-to-br from-purple-600/15 via-purple-500/8 to-indigo-600/12">
+        <Sidebar variant="inset" className="border-0 bg-transparent backdrop-blur-sm">
+          <SidebarHeader className="border-b border-white/10">
             <div className="flex items-center gap-3 px-3 py-4">
-              <div className="p-2 rounded-lg bg-sidebar-primary">
-                <Brain className="h-5 w-5 text-sidebar-primary-foreground" />
+              <div className="p-2 rounded-lg bg-white/20 backdrop-blur-md border border-white/20">
+                <Brain className="h-5 w-5 text-white" />
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-lg text-sidebar-primary">MindVault</span>
-                <span className="text-xs text-sidebar-foreground/70">AI Knowledge Hub</span>
+                <span className="font-bold text-lg text-white">MindVault</span>
+                <span className="text-xs text-white/70">AI Knowledge Hub</span>
               </div>
             </div>
           </SidebarHeader>
           
           <SidebarContent>
             <SidebarGroup>
-              <SidebarGroupLabel>Main</SidebarGroupLabel>
+              <SidebarGroupLabel className="text-white/60">Main</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {sidebarItems.map((item) => (
@@ -137,6 +137,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                       <SidebarMenuButton
                         asChild
                         isActive={pathname === item.url}
+                        className="text-white/80 hover:text-white hover:bg-white/10 data-[state=open]:bg-white/15"
                       >
                         <a href={item.url}>
                           <item.icon />
@@ -154,7 +155,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <SidebarMenu>
               {bottomItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton 
+                    asChild
+                    className="text-white/80 hover:text-white hover:bg-white/10"
+                  >
                     <a href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
@@ -164,6 +168,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               ))}
               <SidebarMenuItem>
                 <SidebarMenuButton
+                  className="text-white/80 hover:text-white hover:bg-white/10"
                   onClick={() =>
                     authClient.signOut({
                       fetchOptions: {
@@ -182,10 +187,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <SidebarRail />
         </Sidebar>
         
-        <SidebarInset className="flex-1">
-          <div className="flex-1">
-            {children}
-          </div>
+        <SidebarInset className="flex-1 p-3 pt-4 pr-4 pb-4">
+          {children}
         </SidebarInset>
       </div>
     </SidebarProvider>
