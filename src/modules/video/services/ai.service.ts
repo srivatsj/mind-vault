@@ -68,7 +68,7 @@ export class AIService {
    */
   static async analyzeVideo(input: VideoAnalysisInput): Promise<AIAnalysisResult> {
     const aiConfig = getAIConfig();
-    const hasTranscript = input.transcript && input.transcript.length > 0;
+    const hasTranscript = input.transcript && Array.isArray(input.transcript) && input.transcript.length > 0;
     
     // Use video analysis if:
     // 1. Explicitly configured for video mode, OR
@@ -228,7 +228,7 @@ export class AIService {
    * Build video analysis prompt for direct video content analysis
    */
   private static buildVideoAnalysisPrompt(input: VideoAnalysisInput): string {
-    const hasTranscript = input.transcript && input.transcript.length > 0;
+    const hasTranscript = input.transcript && Array.isArray(input.transcript) && input.transcript.length > 0;
     
     return `${hasTranscript ? 'Analyze this video with transcript data' : 'SIMULATE WATCHING THIS VIDEO'} and provide intelligent keyframe intervals, summary, and categorization.
 
@@ -413,14 +413,14 @@ Create:
   /**
    * Fallback to evenly spaced intervals when AI fails
    */
-  private static generateFallbackIntervals(duration: number): KeyframeInterval[] {
+  static generateFallbackIntervals(duration: number): KeyframeInterval[] {
     const count = Math.min(10, Math.max(5, Math.floor(duration / 60))); // 5-10 intervals based on duration
     const intervals: KeyframeInterval[] = [];
     const step = duration / (count + 1);
     
     for (let i = 1; i <= count; i++) {
       intervals.push({
-        timestamp: Math.floor(step * i),
+        timestamp: Math.floor(step * i), // Ensure integer timestamp
         reason: `Evenly spaced interval ${i}`,
         confidence: 0.5,
         category: i === 1 ? 'intro' : i === count ? 'conclusion' : 'main_point'
@@ -439,6 +439,10 @@ Create:
     minGap: number = 30 // Minimum 30 seconds between keyframes
   ): KeyframeInterval[] {
     return intervals
+      .map(interval => ({
+        ...interval,
+        timestamp: Math.floor(interval.timestamp) // Ensure integer timestamps
+      }))
       .filter(interval => interval.timestamp >= 0 && interval.timestamp < duration)
       .sort((a, b) => a.timestamp - b.timestamp)
       .filter((interval, index, array) => {

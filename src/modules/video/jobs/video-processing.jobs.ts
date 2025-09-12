@@ -30,7 +30,7 @@ export const videoProcessingJob = typedInngest.createFunction(
       try {
         const result = await TranscriptService.extractTranscript(data.youtubeId);
         
-        // Update database with transcript extraction status
+        // Update database with transcript extraction status and data
         await VideoSummaryDao.updateProcessingStatus(
           data.videoSummaryId,
           'extracting_transcript',
@@ -38,6 +38,14 @@ export const videoProcessingJob = typedInngest.createFunction(
           result.success ? 20 : undefined,
           'Extracting video transcript'
         );
+
+        // Store transcript in database if successful
+        if (result.success) {
+          await VideoSummaryDao.updateTranscript(
+            data.videoSummaryId,
+            result.fullText
+          );
+        }
 
         return result;
       } catch (error) {
@@ -93,8 +101,8 @@ export const videoProcessingJob = typedInngest.createFunction(
           
           console.log(`Validated ${validatedKeyframes.length} keyframes out of ${result.keyframeIntervals?.length || 0} generated`);
           
-          // Update database with AI-generated content
-          await VideoSummaryDao.updateAIContent(data.videoSummaryId, {
+          // Update database with AI-generated content and create tag/category relationships
+          await VideoSummaryDao.updateAIContentWithRelations(data.videoSummaryId, {
             summary: result.summary,
             keyframeIntervals: validatedKeyframes,
             tags: result.tags,
@@ -132,7 +140,7 @@ export const videoProcessingJob = typedInngest.createFunction(
 
       // Get validated keyframes from database (these have been filtered for valid timestamps)
       const videoSummary = await VideoSummaryDao.findById(data.videoSummaryId, data.userId);
-      const keyframeIntervals = videoSummary?.keyframeIntervals;
+      const keyframeIntervals = videoSummary?.aiGeneratedContent?.keyframeIntervals;
       
       if (!keyframeIntervals || keyframeIntervals.length === 0) {
         console.log(`No valid keyframes found for: ${data.title}, skipping keyframe extraction`);
@@ -267,10 +275,13 @@ export const videoProcessingJob = typedInngest.createFunction(
             const keyframe = assetUpload.keyframes[i];
             const interval = aiAnalysis.keyframeIntervals[i];
             
+            // Ensure timestamp is an integer (database schema requirement)
+            const timestamp = Math.floor(interval?.timestamp || 0);
+            
             await VideoSummaryDao.addKeyframe(data.videoSummaryId, {
-              timestamp: interval?.timestamp || 0,
+              timestamp,
               imageUrl: keyframe.url,
-              description: interval?.reason || `Keyframe at ${interval?.timestamp || 0}s`,
+              description: interval?.reason || `Keyframe at ${timestamp}s`,
               confidence: interval?.confidence,
               category: interval?.category,
               aiReason: interval?.reason,

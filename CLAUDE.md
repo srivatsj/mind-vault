@@ -14,18 +14,22 @@ Mind-vault is an AI-powered learning and second brain platform built with Next.j
 # Development
 npm run dev          # Start development server (Turbopack)
 npm run build        # Production build
-npm start           # Start production server
+npm start            # Start production server
 
 # Code Quality
-npm run lint        # Run ESLint
-npm run lint:fix    # Auto-fix ESLint issues
-npm run test:unit  # Run unit tests
-npm run test:integration # Run integration tests
-npx tsc --noEmit   # TypeScript type checking
+npm run lint                # Run ESLint
+npm run lint:fix            # Auto-fix ESLint issues
+npm run test:unit           # Run unit tests
+npm run test:integration    # Run integration tests
+npx tsc --noEmit            # TypeScript type checking
 
 # Database
-npm run db:push     # Push schema changes
-npm run db:studio   # Open database browser
+npm run db:push         # Push schema changes
+npm run db:push:test    # Push schema changesto test env
+npm run db:studio       # Open database browser
+
+# Inngest
+npx inngest-cli@latest dev
 ```
 
 ## Architecture Overview
@@ -47,18 +51,20 @@ npm run db:studio   # Open database browser
 
 ```
 src/
-├── app/                     # Next.js App Router
-│   ├── (dashboard)/         # Authenticated pages
+├── app/                    # Next.js App Router
+│   ├── (dashboard)/        # Authenticated pages
 │   └── layout.tsx          # Root layout
 ├── db/                     # Database configuration
 └── modules/                # Feature modules
     └── video/              # YouTube video processing
         ├── actions/        # Server Actions
-        ├── data/          # DAO layer
-        ├── services/      # Business logic
-        └── ui/            # Components
+        ├── data/           # DAO layer
+        ├── services/       # Business logic
+        └── ui/             # Components
 
 docs/                       # Documentation
+unit_test                   
+integration_test
 ```
 
 ## Documentation
@@ -81,19 +87,26 @@ docs/                       # Documentation
 
 ### ✅ Completed Features
 - Database schema (video summaries, tags, categories, keyframes)
-- YouTube API integration for metadata extraction
+- YouTube API integration for metadata extraction  
 - URL input page with real-time validation (`/add`)
 - Video processing status page with SSE updates (`/videos/[id]`)
 - Library page for browsing saved videos (`/library`)
 - Persistent dashboard layout with sidebar
 - Server Actions + DAO pattern implementation
+- **Background processing pipeline (Inngest + yt-dlp + ffmpeg)**
+- **AI summarization with Vercel AI SDK (Gemini 2.5 Pro)**
+- **Keyframe extraction and storage with Vercel Blob**
+- **Transcript extraction with fallback to video analysis**
+- **Complete video processing workflow with status tracking**
+- **Error handling and retry mechanisms**
+- **Comprehensive unit tests for core services**
 
 ### ⏳ Pending Features  
-- Background processing pipeline (Inngest + yt-dlp + ffmpeg)
-- AI summarization with Vercel AI SDK
-- Keyframe extraction and storage
 - Rich text editor for summary editing
-- Vercel Blob Storage integration
+- Advanced search and filtering in library
+- Video sharing and collaboration features
+- Export functionality (PDF, markdown, etc.)
+- Mobile responsive improvements
 
 ## Development Notes
 - User manages development server, database pushes, linting and runnign any commands

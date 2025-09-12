@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { videoSummary, videoSummaryTag, videoSummaryCategory, keyframe } from "@/db/schema";
+import { videoSummary, videoSummaryTag, videoSummaryCategory, keyframe, tag, category } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
@@ -189,7 +189,7 @@ export class VideoSummaryDao {
       videoSummaryId,
       blobUrl: keyframeData.imageUrl,
       thumbnailUrl: keyframeData.thumbnailUrl,
-      timestamp: keyframeData.timestamp,
+      timestamp: Math.floor(keyframeData.timestamp), // Ensure integer timestamp
       description: keyframeData.description,
       confidence: keyframeData.confidence ? Math.round(keyframeData.confidence * 100) : undefined,
       category: keyframeData.category,
@@ -253,8 +253,158 @@ export class VideoSummaryDao {
       .update(videoSummary)
       .set({
         aiGeneratedContent: aiContent,
+        // Also populate the legacy summary field for backward compatibility and search
+        summary: aiContent.summary?.summary || null,
         updatedAt: new Date(),
       })
       .where(eq(videoSummary.id, id));
+  }
+
+  /**
+   * Update transcript text
+   */
+  static async updateTranscript(id: string, transcript: string): Promise<void> {
+    await db
+      .update(videoSummary)
+      .set({
+        transcript,
+        updatedAt: new Date(),
+      })
+      .where(eq(videoSummary.id, id));
+  }
+
+  /**
+   * Create or get existing tag by name
+   */
+  static async createOrGetTag(name: string, color: string = "#3B82F6"): Promise<string> {
+    // Try to find existing tag
+    const existingTag = await db.query.tag.findFirst({
+      where: eq(tag.name, name)
+    });
+
+    if (existingTag) {
+      return existingTag.id;
+    }
+
+    // Create new tag
+    const tagId = nanoid();
+    await db.insert(tag).values({
+      id: tagId,
+      name,
+      color,
+    });
+
+    return tagId;
+  }
+
+  /**
+   * Create or get existing category by name
+   */
+  static async createOrGetCategory(name: string, description?: string, color: string = "#10B981"): Promise<string> {
+    // Try to find existing category
+    const existingCategory = await db.query.category.findFirst({
+      where: eq(category.name, name)
+    });
+
+    if (existingCategory) {
+      return existingCategory.id;
+    }
+
+    // Create new category
+    const categoryId = nanoid();
+    await db.insert(category).values({
+      id: categoryId,
+      name,
+      description,
+      color,
+    });
+
+    return categoryId;
+  }
+
+  /**
+   * Add tags to video summary (handles creation and linking)
+   */
+  static async addTags(videoSummaryId: string, tagNames: string[]): Promise<void> {
+    for (const tagName of tagNames) {
+      try {
+        const tagId = await this.createOrGetTag(tagName);
+        
+        // Check if relationship already exists
+        const existingRelation = await db.query.videoSummaryTag.findFirst({
+          where: and(
+            eq(videoSummaryTag.videoSummaryId, videoSummaryId),
+            eq(videoSummaryTag.tagId, tagId)
+          )
+        });
+
+        if (!existingRelation) {
+          await this.addTag(videoSummaryId, tagId);
+        }
+      } catch (error) {
+        console.warn(`Failed to add tag "${tagName}":`, error);
+      }
+    }
+  }
+
+  /**
+   * Add categories to video summary (handles creation and linking)
+   */
+  static async addCategories(videoSummaryId: string, categoryNames: string[]): Promise<void> {
+    for (const categoryName of categoryNames) {
+      try {
+        const categoryId = await this.createOrGetCategory(categoryName);
+        
+        // Check if relationship already exists
+        const existingRelation = await db.query.videoSummaryCategory.findFirst({
+          where: and(
+            eq(videoSummaryCategory.videoSummaryId, videoSummaryId),
+            eq(videoSummaryCategory.categoryId, categoryId)
+          )
+        });
+
+        if (!existingRelation) {
+          await this.addCategory(videoSummaryId, categoryId);
+        }
+      } catch (error) {
+        console.warn(`Failed to add category "${categoryName}":`, error);
+      }
+    }
+  }
+
+  /**
+   * Update AI content and create tag/category relationships
+   */
+  static async updateAIContentWithRelations(
+    id: string,
+    aiContent: {
+      summary?: {
+        summary: string;
+        keyPoints: string[];
+        topics: string[];
+        difficulty: string;
+        estimatedReadTime: number;
+      };
+      keyframeIntervals?: Array<{
+        timestamp: number;
+        reason: string;
+        confidence: number;
+        category: string;
+      }>;
+      tags?: string[];
+      categories?: string[];
+    }
+  ): Promise<void> {
+    // Update AI generated content (includes both JSON and legacy summary field)
+    await this.updateAIContent(id, aiContent);
+
+    // Create tag and category relationships
+    if (aiContent.tags && aiContent.tags.length > 0) {
+      await this.addTags(id, aiContent.tags);
+    }
+
+    if (aiContent.categories && aiContent.categories.length > 0) {
+      await this.addCategories(id, aiContent.categories);
+    }
   }
 }

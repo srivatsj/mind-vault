@@ -15,11 +15,38 @@ Complete implementation guide for the YouTube video processing feature - from UR
 - **Module Structure**: Features organized by domain in `src/modules/`
 - **Route Groups**: Dashboard pages organized under `(dashboard)` route group for clean structure
 
-### YouTube Integration Components
-The YouTube processing pipeline implements the AI & Processing stack defined in the technical design:
-- **YouTube Data API v3**: For metadata and basic video information extraction
-- **yt-dlp**: For video downloading and transcript extraction (pending implementation)
-- **FFmpeg**: For keyframe extraction and video processing (pending implementation)
+### Video Processing Pipeline
+
+The complete video processing pipeline implements the AI & Processing stack with the following components:
+
+#### 1. Video Metadata Extraction
+- **YouTube Data API v3**: Extracts title, description, channel, duration, thumbnails
+- **URL Validation**: Multi-format YouTube URL support with video ID extraction
+- **Duplicate Detection**: Prevents re-processing videos already in user's library
+
+#### 2. Transcript Extraction (Multi-Strategy)
+- **Primary Strategy**: `youtube-transcript` library for accessible captions
+- **Secondary Strategy**: `ytdl-core` for alternative caption formats
+- **Fallback Behavior**: Video analysis mode when no transcript available
+- **Error Handling**: Graceful degradation with meaningful status updates
+
+#### 3. AI Content Analysis
+- **Gemini 2.5 Pro Integration**: Via Vercel AI SDK for content understanding
+- **Transcript-Based Analysis**: When transcripts available (faster, more accurate)
+- **Direct Video Analysis**: Fallback mode for videos without accessible transcripts
+- **Content Generation**: Summaries, key points, topics, difficulty assessment, tags
+
+#### 4. Keyframe Extraction
+- **AI-Guided Intervals**: Gemini analyzes content to suggest optimal keyframe timestamps
+- **FFmpeg Processing**: Extracts high-quality frames at specified intervals
+- **Validation**: Ensures extracted frames exist and meet quality standards
+- **Batch Processing**: Efficient extraction of multiple frames per video
+
+#### 5. Asset Storage & Management
+- **Vercel Blob Storage**: Scalable storage for keyframe images with CDN delivery
+- **Image Optimization**: Multiple formats and sizes for different use cases
+- **Cleanup Jobs**: Automatic removal of temporary processing files
+- **URL Management**: Secure access URLs with proper permissions
 
 ### Database Schema
 
@@ -161,10 +188,26 @@ The implementation includes comprehensive tables:
 - Proper error handling and user authentication
 - Duplicate detection and processing status management
 
+**Background Processing**:
+- **Inngest job queue** with multi-step processing pipeline
+- **Transcript extraction** with youtube-transcript library and fallback strategies  
+- **Keyframe extraction** using ffmpeg with AI-suggested intervals
+- **AI summarization** with Vercel AI SDK (Gemini 2.5 Pro)
+- **Asset storage** with Vercel Blob Storage for keyframes
+- **Error handling** with retry mechanisms and graceful degradation
+
+**Processing Pipeline Status Flow**:
+`pending` → `extracting_transcript` → `extracting_keyframes` → `uploading_assets` → `generating_summary` → `completed`
+
+**Testing Coverage**:
+- Comprehensive unit tests for all core services
+- Integration tests for video processing workflows  
+- Error scenario testing with real YouTube API calls
+- Transcript extraction fallback behavior verification
+
 ### ⏳ Next Implementation Phase
-- Background job processing with Inngest
-- Video transcript extraction using yt-dlp
-- Keyframe extraction with FFmpeg
-- AI summarization with Vercel AI SDK
 - Rich text editor for summary editing
-- Vercel Blob Storage integration
+- Advanced search and filtering in library
+- Video sharing and collaboration features
+- Export functionality (PDF, markdown, etc.)
+- Mobile responsive improvements

@@ -47,6 +47,34 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
           color: "bg-yellow-500",
           progress: 10
         };
+      case "extracting_transcript":
+        return {
+          icon: RefreshCw,
+          label: "Extracting Transcript",
+          color: "bg-blue-500",
+          progress: 20
+        };
+      case "extracting_keyframes":
+        return {
+          icon: RefreshCw,
+          label: "Extracting Keyframes",
+          color: "bg-blue-500",
+          progress: 40
+        };
+      case "uploading_assets":
+        return {
+          icon: RefreshCw,
+          label: "Uploading Assets",
+          color: "bg-blue-500",
+          progress: 60
+        };
+      case "generating_summary":
+        return {
+          icon: RefreshCw,
+          label: "Generating Summary",
+          color: "bg-blue-500",
+          progress: 80
+        };
       case "processing":
         return {
           icon: RefreshCw,
@@ -246,7 +274,7 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <div className={`w-2 h-2 rounded-full ${
-                    ["processing", "completed"].includes(summary.processingStatus) 
+                    ["extracting_transcript", "extracting_keyframes", "uploading_assets", "generating_summary", "completed"].includes(summary.processingStatus) 
                       ? "bg-green-500" 
                       : "bg-gray-300"
                   }`} />
@@ -254,19 +282,27 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <div className={`w-2 h-2 rounded-full ${
-                    summary.processingStatus === "completed" 
-                      ? "bg-green-500" 
-                      : "bg-gray-300"
-                  }`} />
-                  <span>AI summary generation</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <div className={`w-2 h-2 rounded-full ${
-                    summary.processingStatus === "completed" 
+                    ["extracting_keyframes", "uploading_assets", "generating_summary", "completed"].includes(summary.processingStatus) 
                       ? "bg-green-500" 
                       : "bg-gray-300"
                   }`} />
                   <span>Keyframe extraction</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <div className={`w-2 h-2 rounded-full ${
+                    ["uploading_assets", "generating_summary", "completed"].includes(summary.processingStatus) 
+                      ? "bg-green-500" 
+                      : "bg-gray-300"
+                  }`} />
+                  <span>Asset upload</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <div className={`w-2 h-2 rounded-full ${
+                    ["generating_summary", "completed"].includes(summary.processingStatus) 
+                      ? "bg-green-500" 
+                      : "bg-gray-300"
+                  }`} />
+                  <span>AI summary generation</span>
                 </div>
               </CardContent>
             </Card>

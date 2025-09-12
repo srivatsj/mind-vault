@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -77,12 +78,35 @@ interface DashboardLayoutProps {
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const router = useRouter();
   const pathname = usePathname();
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending } = authClient.useSession();
 
+  // Handle redirect to sign-in when not authenticated
+  useEffect(() => {
+    if (!isPending && !session) {
+      router.push('/sign-in');
+    }
+  }, [isPending, session, router]);
+
+  // Show loading spinner while checking authentication
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show redirecting message if not authenticated
   if (!session) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p>Loading...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Redirecting to sign in...</p>
+        </div>
       </div>
     );
   }

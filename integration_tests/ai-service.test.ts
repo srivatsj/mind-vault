@@ -308,6 +308,12 @@ describe('AI Service Integration Tests', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('AI service temporarily unavailable');
+      
+      // Verify no partial data is returned on failure
+      expect(result.keyframeIntervals).toBeUndefined();
+      expect(result.summary).toBeUndefined();
+      expect(result.tags).toBeUndefined();
+      expect(result.categories).toBeUndefined();
     });
 
     it('should handle invalid schema responses', async () => {
@@ -328,6 +334,77 @@ describe('AI Service Integration Tests', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
+      
+      // Verify proper error structure
+      expect(typeof result.error).toBe('string');
+      expect(result.keyframeIntervals).toBeUndefined();
+      expect(result.summary).toBeUndefined();
+    });
+
+    it('should handle malformed AI responses gracefully', async () => {
+      // Mock response with missing required fields
+      mockGenerateObject.mockResolvedValue({
+        object: {
+          keyframeIntervals: [],
+          // Missing summary field
+          tags: ['test'],
+          categories: ['test-category']
+        }
+      });
+
+      const input = {
+        title: 'Test Video',
+        duration: 300,
+        transcript: mockTranscriptData.withTranscript,
+        youtubeUrl: 'https://www.youtube.com/watch?v=test123'
+      };
+
+      const result = await AIService.analyzeVideoFromTranscript(input);
+
+      // Should handle missing fields gracefully
+      expect(result.success).toBe(true);
+      expect(result.keyframeIntervals).toEqual([]);
+      expect(result.tags).toEqual(['test']);
+      expect(result.categories).toEqual(['test-category']);
+    });
+
+    it('should validate keyframe timestamps against video duration', async () => {
+      const invalidKeyframes = [
+        { timestamp: -5, reason: 'Invalid negative', confidence: 0.5, category: 'intro' },
+        { timestamp: 400, reason: 'Beyond video end', confidence: 0.7, category: 'conclusion' }
+      ];
+
+      mockGenerateObject.mockResolvedValue({
+        object: {
+          keyframeIntervals: invalidKeyframes,
+          summary: expectedAIAnalysisResults.withTranscript.summary,
+          tags: ['test'],
+          categories: ['test-category']
+        }
+      });
+
+      const input = {
+        title: 'Test Video',
+        duration: 300, // 5 minutes
+        transcript: mockTranscriptData.withTranscript,
+        youtubeUrl: 'https://www.youtube.com/watch?v=test123'
+      };
+
+      const result = await AIService.analyzeVideoFromTranscript(input);
+
+      expect(result.success).toBe(true);
+      
+      // Validate keyframes after processing
+      if (result.keyframeIntervals) {
+        const validated = AIService.validateKeyframeIntervals(result.keyframeIntervals, input.duration);
+        expect(validated).toHaveLength(0); // Both keyframes should be filtered out
+        
+        // Verify all validated keyframes are within duration
+        validated.forEach((keyframe: MockKeyframe) => {
+          expect(keyframe.timestamp).toBeGreaterThanOrEqual(0);
+          expect(keyframe.timestamp).toBeLessThan(input.duration);
+        });
+      }
     });
   });
 
