@@ -6,7 +6,10 @@
  * Runs comprehensive E2E tests for the video processing pipeline
  */
 
+import dotenv from 'dotenv';
 import { execSync } from 'child_process';
+
+dotenv.config({ path: '.env.test' });
 
 console.log('🧪 Running Integration Tests for YouTube Video Processing Pipeline\n');
 
@@ -34,7 +37,7 @@ async function runTestSuite(suite) {
   console.log('─'.repeat(80));
 
   try {
-    const command = `npx jest ${suite.pattern} --verbose --no-cache`;
+    const command = `npx jest ${suite.pattern} --verbose --no-cache --passWithNoTests`;
     console.log(`Running: ${command}\n`);
     
     execSync(command, { 

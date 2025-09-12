@@ -266,7 +266,7 @@ export function wait(ms: number): Promise<void> {
 /**
  * Test video data interface
  */
-interface TestVideoData {
+export interface TestVideoData {
   videoSummaryId: string;
   userId: string;
   youtubeUrl: string;

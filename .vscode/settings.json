@@ -1,0 +1,10 @@
+{
+  "files.exclude": {
+    "**/.claude": true,
+    "**/.next": true,
+    "**/.swc": true,
+    "**/node_modules": true,
+    "**/tsconfig.tsbuildinfo": true,
+    "**/next-env.d.ts": true
+  }
+}
