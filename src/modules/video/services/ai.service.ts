@@ -240,16 +240,38 @@ Description: ${input.description || 'No description'}
 ${input.youtubeUrl ? `YouTube URL: ${input.youtubeUrl}` : ''}
 
 ${hasTranscript ? `TRANSCRIPT AVAILABLE:
-${input.transcript?.map(s => s.text).join(' ').substring(0, 4000) || ''}${(input.transcript?.map(s => s.text).join(' ').length || 0) > 4000 ? '...' : ''}` : `NO TRANSCRIPT - INTELLIGENT VIDEO ANALYSIS MODE:
+${input.transcript?.map(s => s.text).join(' ').substring(0, 4000) || ''}${(input.transcript?.map(s => s.text).join(' ').length || 0) > 4000 ? '...' : ''}` : `NO TRANSCRIPT AVAILABLE - VIDEO WATCHING MODE:
 
-Based on the title "${input.title}" and description, this appears to be a ${this.inferVideoType(input)} video.
+⚠️ IMPORTANT: Since no transcript is available, you must WATCH THE VIDEO directly to analyze its content.
 
-ADVANCED ANALYSIS INSTRUCTIONS:
-As an AI that can "watch" videos, analyze the visual and audio content to understand:
-- What the speaker is explaining (from audio)
-- Visual elements shown (code, diagrams, examples)
-- Screen content changes and transitions
-- Overall narrative flow and structure`}
+VIDEO TO ANALYZE: ${input.youtubeUrl || 'Video file'}
+Title: "${input.title}"
+Video Type: ${this.inferVideoType(input)}
+
+DIRECT VIDEO ANALYSIS INSTRUCTIONS:
+As Gemini Vision, you have the capability to watch and analyze video content directly. Please:
+
+1. **WATCH THE ENTIRE VIDEO** to understand:
+   - What the speaker/presenter is saying (audio analysis)
+   - Visual content shown (slides, code, diagrams, demonstrations)
+   - Screen recordings and what's being shown
+   - Overall structure and flow of the presentation
+   - Key moments and transitions
+
+2. **ANALYZE VISUAL ELEMENTS**:
+   - Code examples or programming content shown on screen
+   - Diagrams, charts, or visual explanations
+   - UI/UX demonstrations if applicable
+   - Any text or documentation displayed
+   - Screen transitions and content changes
+
+3. **UNDERSTAND THE NARRATIVE**:
+   - Introduction and problem setup
+   - Main concepts being taught or demonstrated
+   - Examples and practical applications
+   - Conclusions and key takeaways
+
+Since you're watching the video directly, provide detailed analysis based on what you see and hear, not just the title/description.`}
 
 KEYFRAME EXTRACTION STRATEGY:
 1. **CRITICAL**: All keyframe timestamps MUST be between 0 and ${input.duration} seconds
@@ -263,12 +285,40 @@ KEYFRAME EXTRACTION STRATEGY:
 5. Provide confidence scores based on ${hasTranscript ? 'content analysis' : 'inferred importance'}
 
 SUMMARY GENERATION:
-Create a comprehensive summary that captures:
-- Main topic and learning objectives
-- Key concepts and takeaways (5-8 points)
-- Technical topics covered
-- Estimated difficulty level
-- Target audience (beginner/intermediate/advanced)
+For the summary field specifically, generate structured markdown content with:
+
+## 📖 Overview
+[2-3 sentence engaging introduction that hooks the reader]
+
+## 🎯 What You'll Learn  
+[Clear bullet points of key learning outcomes]
+
+---
+
+## 📋 Main Content
+
+### 🔑 Key Concepts
+[3-4 main concepts explained clearly with context]
+
+### 💡 Important Insights
+[2-3 valuable insights or "aha moments"]
+
+### 🛠️ Practical Applications
+[How viewers can apply this knowledge]
+
+---
+
+## ⭐ Key Takeaways
+[5-6 concise bullet points]
+
+## 🎯 Who This Is For
+[Target audience based on difficulty level]
+
+---
+
+*📊 Estimated read time: [X] minutes | 🎓 Difficulty: [level]*
+
+Use emojis, headers, horizontal dividers (---), bullet points, and **bold** formatting to make the summary visually engaging when rendered.
 
 CATEGORIZATION:
 Generate relevant tags and categories based on the content type and subject matter.`;
@@ -338,7 +388,13 @@ ${hasTranscript
 3. Focus on: intro/hook, main concepts, demonstrations, conclusions, transitions
 4. Avoid redundant or similar moments (minimum 30 seconds between keyframes)
 5. Provide confidence scores (${hasTranscript ? 'based on transcript content' : 'lower confidence due to no transcript'})
-6. Generate a comprehensive summary with key points
+6. Generate a comprehensive summary using structured markdown with:
+   - ## 📖 Overview (engaging introduction)
+   - ## 🎯 What You'll Learn (bullet points)
+   - ## 📋 Main Content with subsections (### 🔑 Key Concepts, ### 💡 Insights, ### 🛠️ Applications)
+   - ## ⭐ Key Takeaways (bullet points)
+   - ## 🎯 Who This Is For (target audience)
+   - Use horizontal dividers (---), emojis, and **bold** formatting
 7. Suggest relevant tags and categories based on available information
 8. Assess content difficulty level
 
@@ -377,18 +433,55 @@ Focus on moments with visual content changes or important narrative beats.`;
   private static buildSummaryPrompt(input: VideoAnalysisInput): string {
     const transcriptText = input.transcript?.map(s => s.text).join(' ') || '';
     
-    return `Create a comprehensive summary of this video.
+    return `Create a comprehensive, engaging summary of this video using structured markdown formatting.
 
 TITLE: ${input.title}
 DURATION: ${Math.floor(input.duration / 60)} minutes
 CONTENT: ${transcriptText.substring(0, 5000)}
 
-Generate:
-- A clear, engaging summary (100-300 words)
-- 5-8 key points or takeaways
-- Main topics covered
-- Difficulty level assessment
-- Estimated reading time for the summary`;
+IMPORTANT: Return the summary as structured markdown with the following elements:
+
+## 📖 Overview
+[2-3 sentence engaging introduction that hooks the reader]
+
+## 🎯 What You'll Learn
+[Clear bullet points of key learning outcomes]
+
+---
+
+## 📋 Main Content
+
+### 🔑 Key Concepts
+[3-4 main concepts explained clearly with context]
+
+### 💡 Important Insights
+[2-3 valuable insights or "aha moments" from the content]
+
+### 🛠️ Practical Applications
+[How viewers can apply this knowledge]
+
+---
+
+## ⭐ Key Takeaways
+[5-6 concise bullet points summarizing the most important points]
+
+## 🎯 Who This Is For
+[Target audience description based on difficulty level]
+
+---
+
+*📊 Estimated read time: [X] minutes | 🎓 Difficulty: [level]*
+
+FORMATTING REQUIREMENTS:
+- Use engaging emojis for section headers
+- Include horizontal dividers (---) to separate major sections
+- Use bullet points and numbered lists where appropriate
+- Make the content scannable with clear headings
+- Keep paragraphs concise (2-3 sentences max)
+- Use **bold** for emphasis on key terms
+- Include the metadata footer with read time and difficulty
+
+Generate a summary that is both informative and visually appealing when rendered as markdown.`;
   }
 
   /**

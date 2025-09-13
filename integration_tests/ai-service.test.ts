@@ -215,7 +215,7 @@ describe('AI Service Integration Tests', () => {
 
         expect(mockGenerateObject).toHaveBeenCalledWith(
           expect.objectContaining({
-            prompt: expect.stringContaining(`this appears to be a ${expectedType} video`)
+            prompt: expect.stringContaining(`Video Type: ${expectedType}`)
           })
         );
       });
@@ -456,8 +456,8 @@ describe('AI Service Integration Tests', () => {
       const prompt = callArgs.prompt;
 
       expect(prompt).toContain('SIMULATE WATCHING THIS VIDEO');
-      expect(prompt).toContain('NO TRANSCRIPT - INTELLIGENT VIDEO ANALYSIS MODE');
-      expect(prompt).toContain('this appears to be a general educational video');
+      expect(prompt).toContain('NO TRANSCRIPT AVAILABLE - VIDEO WATCHING MODE:');
+      expect(prompt).toContain('Video Type: general educational');
       expect(prompt).toContain('Advanced React Patterns');
       expect(prompt).toContain('2400 seconds (40:00)');
       expect(prompt).toContain('All keyframe timestamps MUST be between 0 and 2400 seconds');

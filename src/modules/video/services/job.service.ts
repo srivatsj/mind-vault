@@ -1,4 +1,6 @@
 import { typedInngest } from '@/lib/inngest';
+import { InngestStatusService } from './inngest-status.service';
+import { VideoSummaryDao } from '../data/video-summary.dao';
 
 export interface TriggerVideoProcessingInput {
   videoSummaryId: string;
@@ -22,7 +24,19 @@ export class JobService {
       data: input
     });
 
-    return { eventId: result.ids[0] };
+    const eventId = result.ids[0];
+
+    // Store event ID in database for status tracking
+    await VideoSummaryDao.updateProcessingStatus(
+      input.videoSummaryId,
+      'pending',
+      undefined,
+      0,
+      'Video processing queued',
+      eventId
+    );
+
+    return { eventId };
   }
 
   /**
@@ -55,18 +69,9 @@ export class JobService {
   }
 
   /**
-   * Get job status (placeholder - would need actual implementation based on Inngest API)
+   * Get detailed job info for debugging
    */
-  static async getJobStatus(eventId: string): Promise<{
-    status: 'pending' | 'running' | 'completed' | 'failed';
-    progress?: number;
-    error?: string;
-  }> {
-    // This would require integration with Inngest's API to get actual job status
-    // For now, return a placeholder - eventId would be used in actual implementation
-    console.log(`Job status requested for eventId: ${eventId}`);
-    return {
-      status: 'pending'
-    };
+  static async getDetailedJobInfo() {
+    return await InngestStatusService.getDetailedRunInfo();
   }
 }

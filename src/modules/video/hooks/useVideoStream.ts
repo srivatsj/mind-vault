@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 interface VideoSummary {
   id: string;
@@ -8,8 +8,10 @@ interface VideoSummary {
   duration: number | null;
   thumbnailUrl: string | null;
   youtubeUrl: string;
-  processingStatus: "pending" | "processing" | "completed" | "failed";
+
+  processingStatus: "pending" | "extracting_transcript" | "extracting_keyframes" | "uploading_assets" | "generating_summary" | "completed" | "failed";
   processingError?: string | null;
+  jobEventId?: string | null;
   createdAt: string | Date;
 }
 
@@ -23,59 +25,41 @@ export function useVideoStream(summaryId: string): UseVideoStreamResult {
   const [summary, setSummary] = useState<VideoSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     if (!summaryId) return;
 
-    // Create EventSource connection
-    const eventSource = new EventSource(`/api/videos/${summaryId}/stream`);
-    eventSourceRef.current = eventSource;
-
-    eventSource.onmessage = (event) => {
+    const fetchVideoData = async () => {
       try {
-        const data = JSON.parse(event.data);
+        setLoading(true);
+        setError('');
+        
+        const response = await fetch(`/api/videos/${summaryId}`);
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            setError('Unauthorized');
+          } else if (response.status === 404) {
+            setError('Video not found');
+          } else {
+            setError('Failed to fetch video data');
+          }
+          setLoading(false);
+          return;
+        }
+
+        const data = await response.json();
         setSummary(data);
         setLoading(false);
-        setError('');
       } catch (err) {
-        console.error('Error parsing SSE data:', err);
-        setError('Error parsing server data');
+        console.error('Error fetching video data:', err);
+        setError('Failed to fetch video data');
         setLoading(false);
       }
     };
 
-    eventSource.onerror = (event) => {
-      console.error('SSE connection error:', event);
-      
-      // Check if it's an authentication error (401)
-      if (eventSource.readyState === EventSource.CLOSED) {
-        setError('Connection lost');
-      }
-      setLoading(false);
-    };
-
-    eventSource.onopen = () => {
-      setError('');
-    };
-
-    // Cleanup on unmount or summaryId change
-    return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
-    };
+    fetchVideoData();
   }, [summaryId]);
-
-  // Also cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
-    };
-  }, []);
 
   return { summary, loading, error };
 }

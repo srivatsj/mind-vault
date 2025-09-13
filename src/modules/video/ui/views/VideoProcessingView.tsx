@@ -17,6 +17,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { useVideoStream } from "../../hooks/useVideoStream";
+import { useInngestStatus } from "../../hooks/useInngestStatus";
 
 interface VideoProcessingViewProps {
   summaryId: string;
@@ -25,6 +26,7 @@ interface VideoProcessingViewProps {
 export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => {
   const router = useRouter();
   const { summary, loading, error } = useVideoStream(summaryId);
+  const { status: inngestStatus } = useInngestStatus(summary?.jobEventId, !!summary?.jobEventId);
 
   const formatDuration = (seconds: number | null): string => {
     if (!seconds) return "0:00";
@@ -45,42 +47,42 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
           icon: Clock,
           label: "Queued",
           color: "bg-yellow-500",
-          progress: 10
+          progress: 5
         };
       case "extracting_transcript":
         return {
           icon: RefreshCw,
           label: "Extracting Transcript",
           color: "bg-blue-500",
-          progress: 20
+          progress: 25
         };
       case "extracting_keyframes":
         return {
           icon: RefreshCw,
           label: "Extracting Keyframes",
           color: "bg-blue-500",
-          progress: 40
+          progress: 50
         };
       case "uploading_assets":
         return {
           icon: RefreshCw,
           label: "Uploading Assets",
           color: "bg-blue-500",
-          progress: 60
+          progress: 70
         };
       case "generating_summary":
         return {
           icon: RefreshCw,
-          label: "Generating Summary",
+          label: "Generating AI Summary",
           color: "bg-blue-500",
-          progress: 80
+          progress: 85
         };
       case "processing":
         return {
           icon: RefreshCw,
           label: "Processing",
           color: "bg-blue-500",
-          progress: 60
+          progress: 50
         };
       case "completed":
         return {
@@ -145,7 +147,13 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
     );
   }
 
-  const statusInfo = getStatusInfo(summary.processingStatus);
+  // Prefer Inngest status for real-time updates, fallback to database status
+  const displayStatus = inngestStatus?.status || 
+    (summary.processingStatus === 'completed' ? 'completed' : 
+     summary.processingStatus === 'failed' ? 'failed' : 'processing');
+  const statusInfo = getStatusInfo(displayStatus);
+  const displayProgress = inngestStatus?.progress ?? statusInfo.progress;
+  const currentStep = inngestStatus?.currentStep || statusInfo.label;
   const StatusIcon = statusInfo.icon;
 
   return (
@@ -222,7 +230,7 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
                 <CardTitle className="text-base flex items-center gap-2">
                   <StatusIcon 
                     className={`h-4 w-4 ${
-                      summary.processingStatus === "processing" ? "animate-spin" : ""
+                      displayStatus === "processing" ? "animate-spin" : ""
                     }`} 
                   />
                   Processing Status
@@ -237,21 +245,38 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
                     {statusInfo.label}
                   </Badge>
                   <span className="text-sm text-muted-foreground">
-                    {statusInfo.progress}%
+                    {Math.round(displayProgress)}%
                   </span>
                 </div>
                 
-                <Progress value={statusInfo.progress} className="w-full" />
+                <Progress value={displayProgress} className="w-full" />
                 
-                {summary.processingStatus === "failed" && summary.processingError && (
+                {currentStep && (
+                  <p className="text-sm text-muted-foreground">
+                    {currentStep}
+                  </p>
+                )}
+                
+                {inngestStatus?.warnings && inngestStatus.warnings.length > 0 && (
+                  <div className="space-y-1">
+                    {inngestStatus.warnings.map((warning, index) => (
+                      <p key={index} className="text-sm text-yellow-600 flex items-center gap-2">
+                        <AlertCircle className="h-3 w-3" />
+                        {warning}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                
+                {(displayStatus === "failed") && (inngestStatus?.warnings?.[0] || summary.processingError) && (
                   <Alert variant="destructive">
                     <AlertDescription className="text-sm">
-                      {summary.processingError}
+                      {inngestStatus?.warnings?.[0] || summary.processingError}
                     </AlertDescription>
                   </Alert>
                 )}
                 
-                {summary.processingStatus === "completed" && (
+                {displayStatus === "completed" && (
                   <Button
                     onClick={() => router.push(`/videos/${summaryId}/summary`)}
                     className="w-full"
@@ -272,38 +297,23 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
                   <div className="w-2 h-2 bg-green-500 rounded-full" />
                   <span>Video metadata extracted</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <div className={`w-2 h-2 rounded-full ${
-                    ["extracting_transcript", "extracting_keyframes", "uploading_assets", "generating_summary", "completed"].includes(summary.processingStatus) 
-                      ? "bg-green-500" 
-                      : "bg-gray-300"
-                  }`} />
-                  <span>Transcript extraction</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <div className={`w-2 h-2 rounded-full ${
-                    ["extracting_keyframes", "uploading_assets", "generating_summary", "completed"].includes(summary.processingStatus) 
-                      ? "bg-green-500" 
-                      : "bg-gray-300"
-                  }`} />
-                  <span>Keyframe extraction</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <div className={`w-2 h-2 rounded-full ${
-                    ["uploading_assets", "generating_summary", "completed"].includes(summary.processingStatus) 
-                      ? "bg-green-500" 
-                      : "bg-gray-300"
-                  }`} />
-                  <span>Asset upload</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <div className={`w-2 h-2 rounded-full ${
-                    ["generating_summary", "completed"].includes(summary.processingStatus) 
-                      ? "bg-green-500" 
-                      : "bg-gray-300"
-                  }`} />
-                  <span>AI summary generation</span>
-                </div>
+                {['Extracting transcript', 'Creating visual highlights', 'Uploading assets', 'Generating AI summary'].map((stepName) => (
+                  <div key={stepName} className="flex items-center gap-3 text-sm">
+                    <div className={`w-2 h-2 rounded-full ${
+                      (inngestStatus?.completedSteps?.includes(stepName)) 
+                        ? "bg-green-500" 
+                        : (inngestStatus?.currentStep === stepName || currentStep === stepName)
+                          ? "bg-blue-500 animate-pulse"
+                          : "bg-gray-300"
+                    }`} />
+                    <span className={(inngestStatus?.currentStep === stepName || currentStep === stepName) ? "font-medium" : ""}>
+                      {stepName}
+                    </span>
+                    {(inngestStatus?.currentStep === stepName || currentStep === stepName) && displayStatus === "processing" && (
+                      <RefreshCw className="h-3 w-3 animate-spin text-blue-500" />
+                    )}
+                  </div>
+                ))}
               </CardContent>
             </Card>
           </div>

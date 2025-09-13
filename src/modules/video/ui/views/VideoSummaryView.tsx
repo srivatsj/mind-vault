@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,6 @@ import Image from "next/image";
 import { 
   ArrowLeft, 
   Video, 
-  Edit3,
-  Save,
-  X,
   ExternalLink,
   Clock,
   User,
@@ -79,13 +76,13 @@ interface VideoSummaryData {
 
 export const VideoSummaryView = ({ summaryId }: VideoSummaryViewProps) => {
   const router = useRouter();
-  const { loading: streamLoading, error: streamError } = useVideoStream(summaryId);
+  const { loading: videoLoading, error: videoError } = useVideoStream(summaryId);
   const [summary, setSummary] = useState<VideoSummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [editedSummary, setEditedSummary] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Load detailed summary data
   useEffect(() => {
@@ -128,8 +125,8 @@ export const VideoSummaryView = ({ summaryId }: VideoSummaryViewProps) => {
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleSaveSummary = async () => {
-    if (!summary) return;
+  const handleSaveSummary = useCallback(async () => {
+    if (!summary || !editedSummary.trim()) return;
     
     setIsSaving(true);
     try {
@@ -152,25 +149,45 @@ export const VideoSummaryView = ({ summaryId }: VideoSummaryViewProps) => {
             }
           }
         } : null);
-        setIsEditing(false);
       } else {
-        alert(result.error || "Failed to save changes");
+        console.error("Failed to save changes:", result.error);
       }
     } catch (error) {
       console.error("Error saving summary:", error);
-      alert("An error occurred while saving");
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [summaryId, editedSummary, summary]);
 
-  const handleCancelEdit = () => {
-    setEditedSummary(summary?.aiGeneratedContent?.summary?.summary || summary?.summary || "");
-    setIsEditing(false);
-  };
+  const handleSummaryChange = useCallback((newContent: string) => {
+    setEditedSummary(newContent);
+    
+    // Clear existing timeout
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+    
+    // Set new timeout for autosave (2 seconds after user stops typing)
+    const timeout = setTimeout(() => {
+      if (newContent.trim() !== (summary?.aiGeneratedContent?.summary?.summary || summary?.summary || "").trim()) {
+        handleSaveSummary();
+      }
+    }, 2000);
+    
+    setSaveTimeout(timeout);
+  }, [saveTimeout, handleSaveSummary, summary]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+      }
+    };
+  }, [saveTimeout]);
 
   // Show loading state
-  if (loading || streamLoading) {
+  if (loading || videoLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -182,7 +199,7 @@ export const VideoSummaryView = ({ summaryId }: VideoSummaryViewProps) => {
   }
 
   // Show error state
-  if (error || streamError || !summary) {
+  if (error || videoError || !summary) {
     return (
       <div className="min-h-screen bg-background">
         <div className="border-b">
@@ -202,7 +219,7 @@ export const VideoSummaryView = ({ summaryId }: VideoSummaryViewProps) => {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              {error || streamError || "Video summary not found"}
+              {error || videoError || "Video summary not found"}
             </AlertDescription>
           </Alert>
         </div>
@@ -235,25 +252,10 @@ export const VideoSummaryView = ({ summaryId }: VideoSummaryViewProps) => {
             <h1 className="text-xl font-semibold truncate max-w-md">{summary.title}</h1>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            {!isEditing ? (
-              <Button onClick={() => setIsEditing(true)} variant="outline">
-                <Edit3 className="h-4 w-4 mr-2" />
-                Edit Summary
-              </Button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Button onClick={handleSaveSummary} size="sm" disabled={isSaving}>
-                  {isSaving ? (
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4 mr-2" />
-                  )}
-                  {isSaving ? "Saving..." : "Save"}
-                </Button>
-                <Button onClick={handleCancelEdit} variant="outline" size="sm" disabled={isSaving}>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel
-                </Button>
+            {isSaving && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                Saving...
               </div>
             )}
           </div>
@@ -371,19 +373,11 @@ export const VideoSummaryView = ({ summaryId }: VideoSummaryViewProps) => {
                 </div>
               </CardHeader>
               <CardContent>
-                {isEditing ? (
-                  <RichTextEditor
-                    content={editedSummary}
-                    onChange={setEditedSummary}
-                    placeholder="Edit the AI-generated summary..."
-                  />
-                ) : (
-                  <div className="prose max-w-none">
-                    <div dangerouslySetInnerHTML={{ 
-                      __html: editedSummary || "No summary available" 
-                    }} />
-                  </div>
-                )}
+                <RichTextEditor
+                  content={editedSummary}
+                  onChange={handleSummaryChange}
+                  placeholder="Edit the AI-generated summary..."
+                />
               </CardContent>
             </Card>
 

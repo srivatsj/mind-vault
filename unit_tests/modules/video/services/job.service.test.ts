@@ -1,10 +1,19 @@
 import { JobService } from '@/modules/video/services/job.service';
+import { InngestStatusService } from '@/modules/video/services/inngest-status.service';
 
 // Mock the Inngest client
 jest.mock('@/lib/inngest', () => ({
   typedInngest: {
     send: jest.fn()
   }
+}));
+
+// Mock InngestStatusService
+jest.mock('@/modules/video/services/inngest-status.service', () => ({
+  InngestStatusService: {
+    getUserFriendlyStatus: jest.fn(),
+    getDetailedRunInfo: jest.fn(),
+  },
 }));
 
 describe('JobService', () => {
@@ -22,6 +31,28 @@ describe('JobService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset the mock implementation for getUserFriendlyStatus before each test
+    (InngestStatusService.getUserFriendlyStatus as jest.Mock).mockImplementation(
+      async () => {
+        if (!process.env.INNGEST_SIGNING_KEY) {
+          return {
+            currentStep: 'Initializing',
+            progress: 0,
+            status: 'pending',
+            warnings: [],
+            completedSteps: [],
+          };
+        }
+        // Default mock for when INNGEST_SIGNING_KEY is set (not relevant for this test file, but good practice)
+        return {
+          currentStep: 'Mocked Step',
+          progress: 50,
+          status: 'processing',
+          warnings: [],
+          completedSteps: [],
+        };
+      }
+    );
   });
 
   describe('triggerVideoProcessing', () => {
@@ -89,13 +120,4 @@ describe('JobService', () => {
     });
   });
 
-  describe('getJobStatus', () => {
-    it('should return placeholder job status', async () => {
-      const status = await JobService.getJobStatus('test-event-id');
-
-      expect(status).toEqual({
-        status: 'pending'
-      });
-    });
-  });
 });

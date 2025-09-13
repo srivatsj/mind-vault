@@ -159,12 +159,23 @@ export class VideoSummaryDao {
     } as VideoSummaryWithRelations;
   }
 
+
   static async findByUserAndYouTubeId(userId: string, youtubeId: string): Promise<VideoSummaryWithRelations | null> {
     const summary = await db.query.videoSummary.findFirst({
       where: and(
         eq(videoSummary.userId, userId),
         eq(videoSummary.youtubeId, youtubeId)
       ),
+    });
+
+    if (!summary) return null;
+
+    return summary as VideoSummaryWithRelations;
+  }
+
+  static async findByEventId(eventId: string): Promise<VideoSummaryWithRelations | null> {
+    const summary = await db.query.videoSummary.findFirst({
+      where: eq(videoSummary.jobEventId, eventId),
     });
 
     if (!summary) return null;
@@ -385,7 +396,10 @@ export class VideoSummaryDao {
    * Add tags to video summary (handles creation and linking)
    */
   static async addTags(videoSummaryId: string, tagNames: string[]): Promise<void> {
-    for (const tagName of tagNames) {
+    // Deduplicate tags to avoid constraint violations
+    const uniqueTagNames = [...new Set(tagNames.filter(name => name && name.trim()))];
+    
+    for (const tagName of uniqueTagNames) {
       try {
         const tagId = await this.createOrGetTag(tagName);
         
@@ -410,7 +424,10 @@ export class VideoSummaryDao {
    * Add categories to video summary (handles creation and linking)
    */
   static async addCategories(videoSummaryId: string, categoryNames: string[]): Promise<void> {
-    for (const categoryName of categoryNames) {
+    // Deduplicate categories to avoid constraint violations
+    const uniqueCategoryNames = [...new Set(categoryNames.filter(name => name && name.trim()))];
+    
+    for (const categoryName of uniqueCategoryNames) {
       try {
         const categoryId = await this.createOrGetCategory(categoryName);
         

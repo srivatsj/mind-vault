@@ -170,12 +170,15 @@ export const videoProcessingJob = typedInngest.createFunction(
         return result;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Keyframe extraction failed';
-        await VideoSummaryDao.updateProcessingStatus(
-          data.videoSummaryId,
-          'failed',
-          errorMessage
-        );
-        throw error;
+        console.warn(`Keyframe extraction failed for ${data.title}: ${errorMessage}`);
+        
+        // Continue processing without keyframes instead of failing entirely
+        return { 
+          success: false, 
+          keyframes: [], 
+          tempDir: '', 
+          error: errorMessage 
+        };
       }
     });
 
@@ -194,6 +197,12 @@ export const videoProcessingJob = typedInngest.createFunction(
     const assetUpload = await step.run('upload-assets', async () => {
       if (!keyframeExtraction.success) {
         throw new Error('Cannot upload assets without successful keyframe extraction');
+      }
+
+      // Skip upload if no keyframes were extracted
+      if (!('keyframes' in keyframeExtraction) || !keyframeExtraction.keyframes || keyframeExtraction.keyframes.length === 0) {
+        console.log(`No keyframes to upload for: ${data.title}, skipping asset upload`);
+        return { success: true, message: 'No assets to upload' };
       }
 
       console.log(`Uploading assets for: ${data.title}`);
@@ -270,7 +279,7 @@ export const videoProcessingJob = typedInngest.createFunction(
       
       try {
         // Save keyframe records to database
-        if (assetUpload.keyframes && aiAnalysis.keyframeIntervals) {
+        if ('keyframes' in assetUpload && assetUpload.keyframes && aiAnalysis.keyframeIntervals) {
           for (let i = 0; i < assetUpload.keyframes.length; i++) {
             const keyframe = assetUpload.keyframes[i];
             const interval = aiAnalysis.keyframeIntervals[i];
@@ -337,9 +346,9 @@ export const videoProcessingJob = typedInngest.createFunction(
       transcript: transcript.success,
       keyframes: keyframeExtraction.keyframes.length,
       uploadedAssets: {
-        keyframes: assetUpload.keyframes.length,
-        transcript: !!assetUpload.transcript,
-        analysis: !!assetUpload.analysis
+        keyframes: 'keyframes' in assetUpload ? assetUpload.keyframes.length : 0,
+        transcript: 'transcript' in assetUpload ? !!assetUpload.transcript : false,
+        analysis: 'analysis' in assetUpload ? !!assetUpload.analysis : false
       }
     };
   }

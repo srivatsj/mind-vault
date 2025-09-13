@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { VideoSummaryDao } from "../data/video-summary.dao";
 import { YouTubeService } from "../services/youtube.service";
-import { JobService } from "../services/job.service";
+import { triggerVideoProcessingAction } from "./job.actions";
 
 export interface ProcessVideoResult {
   success: boolean;
@@ -77,7 +77,7 @@ export async function processYouTubeVideo(youtubeUrl: string): Promise<ProcessVi
     });
 
     // Trigger background processing job
-    const { eventId } = await JobService.triggerVideoProcessing({
+    const { eventId } = await triggerVideoProcessingAction({
       videoSummaryId: summaryId,
       userId: session.user.id,
       youtubeUrl,

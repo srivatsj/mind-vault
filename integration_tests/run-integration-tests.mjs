@@ -28,6 +28,21 @@ const testSuites = [
     name: '🧠 AI Service Integration Tests',
     pattern: 'integration_tests/ai-service.test.ts',
     description: 'AI analysis modes, keyframe generation, and video type inference'
+  },
+  {
+    name: '📡 SSE Status Tracking Tests',
+    pattern: 'integration_tests/sse-status-tracking.test.ts',
+    description: 'Real-time status updates, database-based tracking, and SSE flow validation'
+  },
+  {
+    name: '🌐 SSE Endpoint Tests',
+    pattern: 'integration_tests/sse-endpoint.test.ts',
+    description: 'SSE HTTP endpoint behavior, authentication, and stream management'
+  },
+  {
+    name: '🎬 Videos API Tests',
+    pattern: 'integration_tests/videos-api.test.ts',
+    description: 'Video data API endpoint functionality and validation'
   }
 ];
 
