@@ -103,10 +103,10 @@ describe('SSE Status Tracking Integration Tests', () => {
 
       expect(status).toEqual({
         currentStep: 'Creating visual highlights',
-        progress: 40,
+        progress: 60,
         status: 'processing',
         warnings: [],
-        completedSteps: ['Extracting transcript']
+        completedSteps: ['Extracting transcript', 'Generating AI summary']
       });
     });
 
@@ -124,10 +124,10 @@ describe('SSE Status Tracking Integration Tests', () => {
 
       expect(status).toEqual({
         currentStep: 'Uploading assets',
-        progress: 60,
+        progress: 80,
         status: 'processing',
         warnings: [],
-        completedSteps: ['Extracting transcript', 'Creating visual highlights']
+        completedSteps: ['Extracting transcript', 'Generating AI summary', 'Creating visual highlights']
       });
     });
 
@@ -145,10 +145,10 @@ describe('SSE Status Tracking Integration Tests', () => {
 
       expect(status).toEqual({
         currentStep: 'Generating AI summary',
-        progress: 80,
+        progress: 40,
         status: 'processing',
         warnings: [],
-        completedSteps: ['Extracting transcript', 'Creating visual highlights', 'Uploading assets']
+        completedSteps: ['Extracting transcript']
       });
     });
 
@@ -169,7 +169,7 @@ describe('SSE Status Tracking Integration Tests', () => {
         progress: 100,
         status: 'completed',
         warnings: [],
-        completedSteps: ['Extracting transcript', 'Creating visual highlights', 'Uploading assets', 'Generating AI summary']
+        completedSteps: ['Extracting transcript', 'Generating AI summary', 'Creating visual highlights', 'Uploading assets']
       });
     });
 
@@ -249,9 +249,9 @@ describe('SSE Status Tracking Integration Tests', () => {
       const steps = [
         { status: 'pending' as const, progress: 0, step: 'Queued for processing', expectedStatus: 'pending' },
         { status: 'extracting_transcript' as const, progress: 20, step: 'Extracting transcript', expectedStatus: 'processing' },
-        { status: 'extracting_keyframes' as const, progress: 40, step: 'Creating visual highlights', expectedStatus: 'processing' },
-        { status: 'uploading_assets' as const, progress: 60, step: 'Uploading assets', expectedStatus: 'processing' },
-        { status: 'generating_summary' as const, progress: 80, step: 'Generating AI summary', expectedStatus: 'processing' },
+        { status: 'generating_summary' as const, progress: 40, step: 'Generating AI summary', expectedStatus: 'processing' },
+        { status: 'extracting_keyframes' as const, progress: 60, step: 'Creating visual highlights', expectedStatus: 'processing' },
+        { status: 'uploading_assets' as const, progress: 80, step: 'Uploading assets', expectedStatus: 'processing' },
         { status: 'completed' as const, progress: 100, step: 'Completed', expectedStatus: 'completed' }
       ];
 
@@ -332,9 +332,9 @@ describe('SSE Status Tracking Integration Tests', () => {
       const testCases = [
         { status: 'pending' as const, expectedProgress: 0 },
         { status: 'extracting_transcript' as const, expectedProgress: 20 },
-        { status: 'extracting_keyframes' as const, expectedProgress: 40 },
-        { status: 'uploading_assets' as const, expectedProgress: 60 },
-        { status: 'generating_summary' as const, expectedProgress: 80 },
+        { status: 'extracting_keyframes' as const, expectedProgress: 60 },
+        { status: 'generating_summary' as const, expectedProgress: 40 },
+        { status: 'uploading_assets' as const, expectedProgress: 80 },
         { status: 'completed' as const, expectedProgress: 100 },
         { status: 'failed' as const, expectedProgress: 10 }
       ];
@@ -392,20 +392,20 @@ describe('SSE Status Tracking Integration Tests', () => {
           expectedCompleted: []
         },
         {
-          status: 'extracting_keyframes' as const,
+          status: 'generating_summary' as const,
           expectedCompleted: ['Extracting transcript']
         },
         {
-          status: 'uploading_assets' as const,
-          expectedCompleted: ['Extracting transcript', 'Creating visual highlights']
+          status: 'extracting_keyframes' as const,
+          expectedCompleted: ['Extracting transcript', 'Generating AI summary']
         },
         {
-          status: 'generating_summary' as const,
-          expectedCompleted: ['Extracting transcript', 'Creating visual highlights', 'Uploading assets']
+          status: 'uploading_assets' as const,
+          expectedCompleted: ['Extracting transcript', 'Generating AI summary', 'Creating visual highlights']
         },
         {
           status: 'completed' as const,
-          expectedCompleted: ['Extracting transcript', 'Creating visual highlights', 'Uploading assets', 'Generating AI summary']
+          expectedCompleted: ['Extracting transcript', 'Generating AI summary', 'Creating visual highlights', 'Uploading assets']
         },
         {
           status: 'failed' as const,
