@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useDashboard } from "../../hooks/useDashboard";
+import type { DashboardStats } from "../../actions/dashboard.actions";
 import Image from "next/image";
 import {
   Search,
@@ -273,7 +274,7 @@ export const HomeView = () => {
                       </Alert>
                     ) : dashboardData?.recentActivity && dashboardData.recentActivity.length > 0 ? (
                       <div className="space-y-4">
-                        {dashboardData.recentActivity.map((item) => (
+                        {dashboardData.recentActivity.map((item: DashboardStats['recentActivity'][0]) => (
                           <div 
                             key={item.id} 
                             className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
@@ -363,7 +364,7 @@ export const HomeView = () => {
                       </Alert>
                     ) : dashboardData?.topCategories && dashboardData.topCategories.length > 0 ? (
                       <div className="space-y-3">
-                        {dashboardData.topCategories.map((category, index) => (
+                        {dashboardData.topCategories.map((category: DashboardStats['topCategories'][0], index: number) => (
                           <div key={category.name} className="flex items-center justify-between">
                             <Badge 
                               variant="secondary" 
