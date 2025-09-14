@@ -22,7 +22,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import { useVideoStream } from "../../hooks/useVideoStream";
-import { RichTextEditor } from "../components/RichTextEditor";
+import { BlockNoteEditor } from "../components/BlockNoteEditor";
 import { getVideoSummary, updateVideoSummary } from "../../actions/video.actions";
 
 interface VideoSummaryViewProps {
@@ -373,10 +373,9 @@ export const VideoSummaryView = ({ summaryId }: VideoSummaryViewProps) => {
                 </div>
               </CardHeader>
               <CardContent>
-                <RichTextEditor
+                <BlockNoteEditor
                   content={editedSummary}
                   onChange={handleSummaryChange}
-                  placeholder="Edit the AI-generated summary..."
                 />
               </CardContent>
             </Card>

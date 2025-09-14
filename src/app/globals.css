@@ -1,6 +1,43 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* BlockNote Editor - Content-only styling that doesn't affect menus */
+.bn-container {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Target only content blocks, not menus */
+.bn-container [data-content-type="heading"][data-level="1"] {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 12px 0 8px 0;
+}
+
+.bn-container [data-content-type="heading"][data-level="2"] {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 10px 0 6px 0;
+}
+
+.bn-container [data-content-type="heading"][data-level="3"] {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 8px 0 4px 0;
+}
+
+.bn-container [data-content-type="paragraph"] {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.bn-container [data-content-type="bulletListItem"],
+.bn-container [data-content-type="numberedListItem"] {
+  margin: 2px 0;
+  font-size: 14px;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
