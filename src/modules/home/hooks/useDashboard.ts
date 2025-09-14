@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getDashboardData, DashboardStats } from "../actions/dashboard.actions";
+import { getDashboardData } from "../actions/dashboard.actions";
+import type { DashboardStats } from "../data/dashboard.dao";
 
 export const useDashboard = () => {
   const [data, setData] = useState<DashboardStats | null>(null);

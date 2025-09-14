@@ -4,8 +4,6 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { DashboardDao, type DashboardStats } from "../data/dashboard.dao";
 
-export type { DashboardStats };
-
 export interface DashboardResult {
   success: boolean;
   data?: DashboardStats;

@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useDashboard } from "../../hooks/useDashboard";
-import type { DashboardStats } from "../../actions/dashboard.actions";
+import type { DashboardStats } from "../../data/dashboard.dao";
 import Image from "next/image";
 import {
   Search,
