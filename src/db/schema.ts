@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, json, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, json, integer, vector, index } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -166,5 +166,70 @@ export const keyframe = pgTable("keyframe", {
   category: text("category"), // intro, main_point, demo, conclusion, etc.
   aiReason: text("ai_reason"), // Why AI selected this keyframe
   fileSize: integer("file_size"), // File size in bytes
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Content embeddings for semantic search
+export const contentEmbedding = pgTable("content_embedding", {
+  id: text("id").primaryKey(),
+  videoSummaryId: text("video_summary_id")
+    .notNull()
+    .references(() => videoSummary.id, { onDelete: "cascade" }),
+  contentType: text("content_type", {
+    enum: ["transcript_segment", "keyframe", "summary", "description", "key_point"]
+  }).notNull(),
+  contentText: text("content_text").notNull(),
+  embedding: vector("embedding", { dimensions: 768 }), // Gemini text embeddings (text-embedding-004)
+  keyframeId: text("keyframe_id").references(() => keyframe.id, { onDelete: "cascade" }),
+  timestamp: integer("timestamp"), // For transcript segments (seconds)
+  metadata: json("metadata").$type<{
+    segmentIndex?: number;
+    confidence?: number;
+    category?: string;
+    duration?: number;
+    topics?: string[];
+  }>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  embeddingIndex: index("content_embedding_vector_idx").using("hnsw", table.embedding.op("vector_cosine_ops")),
+  contentTypeIndex: index("content_type_idx").on(table.contentType),
+  videoIndex: index("video_summary_idx").on(table.videoSummaryId),
+}));
+
+// Chat conversations
+export const chatConversation = pgTable("chat_conversation", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  title: text("title"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+// Chat messages with RAG context
+export const chatMessage = pgTable("chat_message", {
+  id: text("id").primaryKey(),
+  conversationId: text("conversation_id")
+    .notNull()
+    .references(() => chatConversation.id, { onDelete: "cascade" }),
+  role: text("role", { enum: ["user", "assistant"] }).notNull(),
+  content: text("content").notNull(),
+  contextData: json("context_data").$type<{
+    retrievedContent?: Array<{
+      contentId: string;
+      contentType: string;
+      snippet: string;
+      similarity: number;
+      videoTitle: string;
+      timestamp?: number;
+      keyframeUrl?: string;
+    }>;
+    searchQuery?: string;
+    totalResults?: number;
+  }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
