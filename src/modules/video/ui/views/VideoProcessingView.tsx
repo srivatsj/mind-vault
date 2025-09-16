@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import Image from "next/image";
 import {
   ArrowLeft,
@@ -15,11 +14,9 @@ import {
   Clock,
   AlertCircle,
   RefreshCw,
-  ExternalLink,
-  XCircle
+  ExternalLink
 } from "lucide-react";
 import { useVideoStream } from "../../hooks/useVideoStream";
-import { useInngestStatus } from "../../hooks/useInngestStatus";
 
 interface VideoProcessingViewProps {
   summaryId: string;
@@ -28,10 +25,6 @@ interface VideoProcessingViewProps {
 export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => {
   const router = useRouter();
   const { summary, loading, error } = useVideoStream(summaryId);
-  // Only use SSE for videos that are actively processing
-  const enableSSE = Boolean(summary?.jobEventId && summary?.processingStatus &&
-    !['completed', 'failed'].includes(summary.processingStatus));
-  const { status: inngestStatus } = useInngestStatus(summary?.jobEventId, enableSSE);
 
   const formatDuration = (seconds: number | null): string => {
     if (!seconds) return "0:00";
@@ -55,34 +48,9 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
           progress: 5
         };
       case "extracting_transcript":
-        return {
-          icon: RefreshCw,
-          label: "Extracting Transcript",
-          color: "bg-blue-500",
-          progress: 25
-        };
-      case "extracting_keyframes":
-        return {
-          icon: RefreshCw,
-          label: "Extracting Keyframes",
-          color: "bg-blue-500",
-          progress: 50
-        };
-      case "uploading_assets":
-        return {
-          icon: RefreshCw,
-          label: "Uploading Assets",
-          color: "bg-blue-500",
-          progress: 70
-        };
       case "generating_summary":
-        return {
-          icon: RefreshCw,
-          label: "Generating AI Summary",
-          color: "bg-blue-500",
-          progress: 85
-        };
-      case "processing":
+      case "extracting_keyframes":
+      case "uploading_assets":
         return {
           icon: RefreshCw,
           label: "Processing",
@@ -152,151 +120,12 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
     );
   }
 
-  // Create proper status mapping that respects database status for completed/failed
-  const getDatabaseStatusInfo = (dbStatus: string) => {
-    const statusMapping: Record<string, { status: 'pending' | 'processing' | 'completed' | 'failed'; step: string; progress: number }> = {
-      'pending': { status: 'pending' as const, step: 'Queued', progress: 5 },
-      'extracting_transcript': { status: 'processing' as const, step: 'Extracting transcript', progress: 20 },
-      'generating_summary': { status: 'processing' as const, step: 'Generating AI summary', progress: 40 },
-      'extracting_keyframes': { status: 'processing' as const, step: 'Creating visual highlights', progress: 60 },
-      'uploading_assets': { status: 'processing' as const, step: 'Uploading assets', progress: 80 },
-      'completed': { status: 'completed' as const, step: 'Completed', progress: 100 },
-      'failed': { status: 'failed' as const, step: 'Failed', progress: 0 }
-    };
-    return statusMapping[dbStatus] || statusMapping['pending'];
-  };
-
-  // Use SSE status for active processing, database status for completed/failed
-  const shouldUseSSE = summary.processingStatus && !['completed', 'failed'].includes(summary.processingStatus);
-  const dbStatusInfo = getDatabaseStatusInfo(summary.processingStatus);
-
-  const displayStatus = shouldUseSSE && inngestStatus?.status ? inngestStatus.status : dbStatusInfo.status;
-  const statusInfo = getStatusInfo(displayStatus);
-  const displayProgress = shouldUseSSE && inngestStatus?.progress !== undefined ? inngestStatus.progress : dbStatusInfo.progress;
-  const currentStep = shouldUseSSE && inngestStatus?.currentStep ? inngestStatus.currentStep : dbStatusInfo.step;
+  // Simple status logic - only use database status
+  const statusInfo = getStatusInfo(summary.processingStatus);
   const StatusIcon = statusInfo.icon;
 
-  // Define all processing steps in ACTUAL pipeline execution order
-  const allSteps = ['Extracting transcript', 'Generating AI summary', 'Creating visual highlights', 'Uploading assets'];
-
-  // Check if individual steps succeeded by examining the data
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const checkIndividualStepSuccess = (stepName: string, videoSummary: any): boolean => {
-    switch (stepName) {
-      case 'Extracting transcript':
-        // Check if transcript exists and is not empty
-        return Boolean(videoSummary.transcript && typeof videoSummary.transcript === 'string' && videoSummary.transcript.trim().length > 0);
-
-      case 'Generating AI summary':
-        // Check if AI-generated content exists with correct nested structure
-        const aiContent = videoSummary.aiGeneratedContent;
-        const summaryObj = aiContent?.summary;
-        const actualSummary = summaryObj?.summary;
-
-        // The actual summary text is at aiGeneratedContent.summary.summary
-        return Boolean(actualSummary && typeof actualSummary === 'string' && actualSummary.trim().length > 0);
-
-      case 'Creating visual highlights':
-        // Check if keyframes were extracted successfully
-        const keyframes = videoSummary.aiGeneratedContent?.keyframeIntervals;
-        return Boolean(keyframes && Array.isArray(keyframes) && keyframes.length > 0);
-
-      case 'Uploading assets':
-        // This step is harder to verify without checking blob storage
-        // For now, assume it succeeded if we got this far and other steps worked
-        return true;
-
-      default:
-        return true;
-    }
-  };
-
-  // Get step states for UI display - CONSISTENT validation for all scenarios
-  const getStepStates = () => {
-    const states: Record<string, 'pending' | 'current' | 'completed' | 'failed'> = {};
-
-    // Always validate completed steps against actual data - no exceptions!
-    const validateStep = (stepName: string): 'completed' | 'failed' => {
-      return checkIndividualStepSuccess(stepName, summary) ? 'completed' : 'failed';
-    };
-
-    // For SSE (actively processing videos)
-    if (shouldUseSSE && inngestStatus) {
-      const completed = inngestStatus.completedSteps || [];
-      const current = inngestStatus.currentStep;
-      const isJobFailed = inngestStatus.status === 'failed';
-
-      allSteps.forEach((step) => {
-        if (completed.includes(step)) {
-          // ALWAYS validate completed steps - even during processing
-          states[step] = validateStep(step);
-        } else if (current === step) {
-          states[step] = isJobFailed ? 'failed' : 'current';
-        } else {
-          states[step] = 'pending';
-        }
-      });
-      return states;
-    }
-
-    // For database-based status (completed/failed/non-SSE videos)
-    const dbStatus = summary.processingStatus;
-
-    if (dbStatus === 'completed') {
-      // All steps should be validated for completed videos
-      allSteps.forEach((step) => {
-        states[step] = validateStep(step);
-      });
-    } else if (dbStatus === 'failed') {
-      // For failed jobs, validate what we can and mark the rest as failed
-      allSteps.forEach((step) => {
-        states[step] = validateStep(step);
-      });
-    } else {
-      // For processing states (extracting_transcript, generating_summary, etc.)
-      const statusToStepIndex: Record<string, number> = {
-        'pending': -1,
-        'extracting_transcript': 0,
-        'generating_summary': 1,
-        'extracting_keyframes': 2,
-        'uploading_assets': 3
-      };
-
-      const currentStepIndex = statusToStepIndex[dbStatus] ?? -1;
-
-      allSteps.forEach((step, index) => {
-        if (index < currentStepIndex) {
-          // Previous steps - validate against data
-          states[step] = validateStep(step);
-        } else if (index === currentStepIndex) {
-          states[step] = 'current';
-        } else {
-          states[step] = 'pending';
-        }
-      });
-    }
-
-    return states;
-  };
-
-  const stepStates = getStepStates();
-  const errorMessage = inngestStatus?.warnings?.[0] || summary.processingError;
-
-  // Get specific error message for a failed step
-  const getStepErrorMessage = (stepName: string): string => {
-    switch (stepName) {
-      case 'Extracting transcript':
-        return 'No transcript available for this video';
-      case 'Generating AI summary':
-        return 'Failed to generate AI summary';
-      case 'Creating visual highlights':
-        return 'No keyframes could be extracted';
-      case 'Uploading assets':
-        return 'Failed to upload assets to storage';
-      default:
-        return errorMessage || 'Step failed';
-    }
-  };
+  // Only show detailed steps for completed/failed videos
+  const showDetailedSteps = ['completed', 'failed'].includes(summary.processingStatus);
 
   return (
     <div className="h-full flex flex-col">
@@ -370,38 +199,42 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <StatusIcon 
+                  <StatusIcon
                     className={`h-4 w-4 ${
-                      displayStatus === "processing" ? "animate-spin" : ""
-                    }`} 
+                      summary.processingStatus !== "completed" && summary.processingStatus !== "failed" ? "animate-spin" : ""
+                    }`}
                   />
                   Processing Status
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Badge 
-                    variant="secondary" 
+                  <Badge
+                    variant="secondary"
                     className={`${statusInfo.color} text-white`}
                   >
                     {statusInfo.label}
                   </Badge>
                   <span className="text-sm text-muted-foreground">
-                    {Math.round(displayProgress)}%
+                    {Math.round(statusInfo.progress)}%
                   </span>
                 </div>
-                
-                <Progress value={displayProgress} className="w-full" />
-                
-                {currentStep && (
-                  <p className="text-sm text-muted-foreground">
-                    {currentStep}
+
+                <Progress value={statusInfo.progress} className="w-full" />
+
+                {!['completed', 'failed'].includes(summary.processingStatus) && (
+                  <p className="text-xs text-muted-foreground">
+                    Auto-refreshing every 3 seconds...
                   </p>
                 )}
-                
-                
-                
-                {displayStatus === "completed" && (
+
+                {summary.processingError && (
+                  <p className="text-sm text-red-600">
+                    {summary.processingError}
+                  </p>
+                )}
+
+                {summary.processingStatus === "completed" && (
                   <Button
                     onClick={() => router.push(`/videos/${summaryId}/summary`)}
                     className="w-full"
@@ -412,58 +245,45 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
               </CardContent>
             </Card>
 
-            {/* Processing Steps */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Processing Steps</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <TooltipProvider>
+            {/* Processing Steps - Only show for completed/failed videos */}
+            {showDetailedSteps && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Processing Steps</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
                   <div className="flex items-center gap-3 text-sm">
                     <div className="w-2 h-2 bg-green-500 rounded-full" />
                     <span>Video metadata extracted</span>
                   </div>
-                  {allSteps.map((stepName) => {
-                    const stepState = stepStates[stepName] || 'pending';
-
-                    const getStepStyle = (state: string) => {
-                      switch (state) {
-                        case 'completed':
-                          return { dial: "bg-green-500", text: "", icon: null };
-                        case 'current':
-                          return { dial: "bg-blue-500 animate-pulse", text: "font-medium", icon: <RefreshCw className="h-3 w-3 animate-spin text-blue-500" /> };
-                        case 'failed':
-                          return { dial: "bg-red-500", text: "text-red-600", icon: <XCircle className="h-3 w-3 text-red-500" /> };
-                        case 'pending':
-                        default:
-                          return { dial: "bg-gray-300", text: "", icon: null };
-                      }
-                    };
-
-                    const style = getStepStyle(stepState);
-
-                    return (
-                      <div key={stepName} className="flex items-center gap-3 text-sm">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className={`w-2 h-2 rounded-full ${style.dial}`} />
-                          </TooltipTrigger>
-                          {stepState === 'failed' && (
-                            <TooltipContent>
-                              <p className="text-xs max-w-xs">{getStepErrorMessage(stepName)}</p>
-                            </TooltipContent>
-                          )}
-                        </Tooltip>
-                        <span className={style.text}>
-                          {stepName}
-                        </span>
-                        {style.icon}
-                      </div>
-                    );
-                  })}
-                </TooltipProvider>
-              </CardContent>
-            </Card>
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className={`w-2 h-2 rounded-full ${
+                      summary.transcript && summary.transcript.trim().length > 0
+                        ? 'bg-green-500' : 'bg-red-500'
+                    }`} />
+                    <span>Extracting transcript</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className={`w-2 h-2 rounded-full ${
+                      summary.aiGeneratedContent?.summary?.summary
+                        ? 'bg-green-500' : 'bg-red-500'
+                    }`} />
+                    <span>Generating AI summary</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className={`w-2 h-2 rounded-full ${
+                      summary.aiGeneratedContent?.keyframeIntervals?.length && summary.aiGeneratedContent.keyframeIntervals.length > 0
+                        ? 'bg-green-500' : 'bg-red-500'
+                    }`} />
+                    <span>Creating visual highlights</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-2 h-2 bg-green-500 rounded-full" />
+                    <span>Uploading assets</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
         </div>

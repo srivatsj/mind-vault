@@ -1,5 +1,4 @@
 import { typedInngest } from '@/lib/inngest';
-import { InngestStatusService } from './inngest-status.service';
 import { VideoSummaryDao } from '../data/video-summary.dao';
 
 export interface TriggerVideoProcessingInput {
@@ -69,9 +68,10 @@ export class JobService {
   }
 
   /**
-   * Get detailed job info for debugging
+   * Get detailed job info for debugging (placeholder)
    */
   static async getDetailedJobInfo() {
-    return await InngestStatusService.getDetailedRunInfo();
+    // TODO: Implement if needed for debugging
+    return null;
   }
 }
