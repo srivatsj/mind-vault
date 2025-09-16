@@ -146,13 +146,19 @@ export class RAGService {
     // Group content by video for better organization
     const contentByVideo = this.groupContentByVideo(relevantContent);
 
-    // Create context string with visual indicators
+    // Create context string with visual indicators and image references
     const contextSections = Object.entries(contentByVideo).map(([videoTitle, contents]) => {
       const videoContent = contents.map(content => {
         let prefix = '';
+        let imageRef = '';
+
         switch (content.contentType) {
           case 'keyframe':
             prefix = '🖼️ [Visual]';
+            // Add image reference for keyframes
+            if (content.keyframeUrl) {
+              imageRef = ` [KEYFRAME_IMAGE:${content.keyframeUrl}]`;
+            }
             break;
           case 'transcript_segment':
             prefix = content.timestamp ? `🎬 [${this.formatTimestamp(content.timestamp)}]` : '🎬 [Transcript]';
@@ -167,7 +173,7 @@ export class RAGService {
             prefix = '📄';
         }
 
-        return `${prefix} ${content.snippet}`;
+        return `${prefix} ${content.snippet}${imageRef}`;
       }).join('\n');
 
       return `**${videoTitle}:**\n${videoContent}`;
@@ -189,17 +195,21 @@ ${contextSections}
 Instructions:
 1. Answer the question directly and comprehensively using the provided content
 2. Reference specific videos and timestamps when relevant
-3. If visual content is mentioned, note it explicitly (e.g., "As shown in the keyframe at 2:35...")
-4. Use a conversational, helpful tone
-5. If the content doesn't fully answer the question, say so and suggest what information might be missing
-6. Structure your response with clear formatting using markdown
-7. Include relevant emojis to make the response more engaging
+3. **IMPORTANT: When visual content from keyframes is relevant, include the images in your response using this exact format: [IMAGE:URL] where URL is the keyframe image URL from [KEYFRAME_IMAGE:URL] references in the content**
+4. If visual content is mentioned, note it explicitly (e.g., "As shown in this screenshot: [IMAGE:URL]" or "Here's what the interface looks like: [IMAGE:URL]")
+5. Use a conversational, helpful tone
+6. If the content doesn't fully answer the question, say so and suggest what information might be missing
+7. Structure your response with clear formatting using markdown
+8. Include relevant emojis to make the response more engaging
 
 Format your response as:
 - Start with a direct answer
 - Provide detailed explanation using the context
+- Include relevant keyframe images using [IMAGE:URL] syntax when visual content helps explain the answer
 - Reference specific sources with timestamps when available
 - End with any additional insights or suggestions
+
+**CRITICAL: Always include keyframe images in your response when they are relevant to the user's question by using [IMAGE:URL] syntax.**
 
 Do not make up information not present in the provided content.`;
 

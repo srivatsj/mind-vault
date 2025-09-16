@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { videoSummary, videoSummaryTag, videoSummaryCategory, keyframe, tag, category } from "@/db/schema";
+import { videoSummary, videoSummaryTag, videoSummaryCategory, keyframe, tag, category, contentEmbedding } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
@@ -24,7 +24,7 @@ export interface UpdateVideoSummaryInput {
     diagrams?: string[];
     suggestedTags?: string[];
   };
-  processingStatus?: "pending" | "extracting_transcript" | "extracting_keyframes" | "uploading_assets" | "generating_summary" | "completed" | "failed";
+  processingStatus?: "pending" | "extracting_transcript" | "extracting_keyframes" | "uploading_assets" | "generating_summary" | "generating_embeddings" | "completed" | "failed";
   processingError?: string;
 }
 
@@ -65,7 +65,7 @@ export interface VideoSummaryWithRelations {
     confidence: number;
     category: string;
   }>;
-  processingStatus: "pending" | "extracting_transcript" | "extracting_keyframes" | "uploading_assets" | "generating_summary" | "completed" | "failed";
+  processingStatus: "pending" | "extracting_transcript" | "extracting_keyframes" | "uploading_assets" | "generating_summary" | "generating_embeddings" | "completed" | "failed";
   processingError: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -274,7 +274,7 @@ export class VideoSummaryDao {
    */
   static async updateProcessingStatus(
     id: string,
-    status: "pending" | "extracting_transcript" | "extracting_keyframes" | "uploading_assets" | "generating_summary" | "completed" | "failed",
+    status: "pending" | "extracting_transcript" | "extracting_keyframes" | "uploading_assets" | "generating_summary" | "generating_embeddings" | "completed" | "failed",
     error?: string,
     progress?: number,
     currentStep?: string,
@@ -481,6 +481,71 @@ export class VideoSummaryDao {
 
     if (aiContent.categories && aiContent.categories.length > 0) {
       await this.addCategories(id, aiContent.categories);
+    }
+  }
+
+  /**
+   * Get keyframes for a video summary
+   */
+  static async getKeyframes(videoSummaryId: string): Promise<Array<{
+    id: string;
+    blobUrl: string;
+    timestamp: number;
+    description: string | null;
+    confidence: number | null;
+    category: string | null;
+  }>> {
+    const keyframes = await db
+      .select()
+      .from(keyframe)
+      .where(eq(keyframe.videoSummaryId, videoSummaryId))
+      .orderBy(keyframe.timestamp);
+
+    return keyframes.map(kf => ({
+      id: kf.id,
+      blobUrl: kf.blobUrl,
+      timestamp: kf.timestamp,
+      description: kf.description,
+      confidence: kf.confidence,
+      category: kf.category
+    }));
+  }
+
+  /**
+   * Save embeddings for video content
+   */
+  static async saveEmbeddings(
+    videoSummaryId: string,
+    embeddings: Array<{
+      contentType: "transcript_segment" | "keyframe" | "summary" | "description" | "key_point";
+      contentText: string;
+      embedding: number[];
+      keyframeId?: string;
+      timestamp?: number;
+      metadata?: {
+        segmentIndex?: number;
+        confidence?: number;
+        category?: string;
+        duration?: number;
+        topics?: string[];
+        difficulty?: string;
+        estimatedReadTime?: number;
+      };
+    }>
+  ): Promise<void> {
+    const embeddingRecords = embeddings.map(emb => ({
+      id: nanoid(),
+      videoSummaryId,
+      contentType: emb.contentType,
+      contentText: emb.contentText,
+      embedding: emb.embedding,
+      keyframeId: emb.keyframeId || null,
+      timestamp: emb.timestamp || null,
+      metadata: emb.metadata || null
+    }));
+
+    if (embeddingRecords.length > 0) {
+      await db.insert(contentEmbedding).values(embeddingRecords);
     }
   }
 }

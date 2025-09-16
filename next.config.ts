@@ -5,7 +5,20 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react']
   },
   images: {
-    domains: ['i.ytimg.com', 'img.youtube.com', 'gurdtk4gvn8sxhrj.public.blob.vercel-storage.com',],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.public.blob.vercel-storage.com',
+      },
+    ],
   },
 };
 

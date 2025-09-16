@@ -51,6 +51,7 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
       case "generating_summary":
       case "extracting_keyframes":
       case "uploading_assets":
+      case "generating_embeddings":
         return {
           icon: RefreshCw,
           label: "Processing",
@@ -280,6 +281,10 @@ export const VideoProcessingView = ({ summaryId }: VideoProcessingViewProps) => 
                   <div className="flex items-center gap-3 text-sm">
                     <div className="w-2 h-2 bg-green-500 rounded-full" />
                     <span>Uploading assets</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-2 h-2 bg-green-500 rounded-full" />
+                    <span>Generating multimodal embeddings</span>
                   </div>
                 </CardContent>
               </Card>

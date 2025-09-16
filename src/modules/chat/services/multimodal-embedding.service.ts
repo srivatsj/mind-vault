@@ -96,7 +96,7 @@ export class MultimodalEmbeddingService {
   /**
    * Generate text embedding using Gemini
    */
-  private static async generateTextEmbedding(text: string): Promise<number[]> {
+  static async generateTextEmbedding(text: string): Promise<number[]> {
     try {
       const { GoogleGenerativeAI } = await import('@google/generative-ai');
 
@@ -131,8 +131,8 @@ export class MultimodalEmbeddingService {
    * This would encode both image and text into the same embedding space
    */
   static async embedImageWithCLIP(
-    _imageUrl: string,
-    _textContent: string
+    imageUrl: string,
+    textContent: string
   ): Promise<{
     imageEmbedding: number[];
     textEmbedding: number[];
@@ -141,7 +141,7 @@ export class MultimodalEmbeddingService {
     // TODO: Implement CLIP-style multimodal embedding
     // This would require a service like OpenAI's CLIP or Hugging Face models
 
-    console.log('CLIP embedding not yet implemented');
+    console.log(`CLIP embedding not yet implemented for image: ${imageUrl.substring(0, 50)} and text: ${textContent.substring(0, 50)}`);
     const mockEmbedding = new Array(768).fill(0).map(() => Math.random() - 0.5);
 
     return {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -10,7 +11,7 @@ import {
   MessageCircle,
   Send,
   User,
-  Bot,
+  Bot
 } from 'lucide-react';
 import {
   createChatConversation,
@@ -18,7 +19,7 @@ import {
   getChatStats
 } from '@/modules/chat/actions/chat.actions';
 
-// Simple markdown-like formatting component
+// Simple markdown-like formatting component with image support
 function MessageContent({ content }: { content: string }) {
   const formatText = (text: string) => {
     return text.split('\n').map((line, i) => {
@@ -38,9 +39,9 @@ function MessageContent({ content }: { content: string }) {
       // Regular paragraph
       if (line.trim()) {
         return (
-          <p key={i} className="mb-2 last:mb-0">
+          <div key={i} className="mb-2 last:mb-0">
             {formatInlineText(line)}
-          </p>
+          </div>
         );
       }
 
@@ -50,41 +51,106 @@ function MessageContent({ content }: { content: string }) {
 
   const formatInlineText = (text: string) => {
     const parts: (string | React.ReactElement)[] = [];
-    let lastIndex = 0;
 
-    // Handle bold text **text**
-    text.replace(/\*\*(.*?)\*\*/g, (match, content, index) => {
-      if (index > lastIndex) {
-        parts.push(text.slice(lastIndex, index));
-      }
-      parts.push(<strong key={`bold-${index}`}>{content}</strong>);
-      lastIndex = index + match.length;
-      return match;
-    });
-
-    if (lastIndex < text.length) {
-      parts.push(text.slice(lastIndex));
+    // Debug: Log the text to see what we're working with
+    if (text.includes('[IMAGE:')) {
+      console.log('Processing text with image:', text);
     }
 
-    return parts.length > 1 ? parts : text;
+    // Handle literal [IMAGE:URL] placeholder (when no actual URL is provided)
+    text = text.replace(/\[IMAGE:URL\]/g, '📷 *[Visual content referenced but image not available]*');
+
+    // Handle images [IMAGE:URL] first
+    const imageRegex = /\[IMAGE:(https?:\/\/[^\]]+)\]/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = imageRegex.exec(text)) !== null) {
+      // Add text before the image
+      if (match.index > lastIndex) {
+        const beforeText = text.slice(lastIndex, match.index);
+        if (beforeText.trim()) {
+          parts.push(beforeText);
+        }
+      }
+
+      // Add the image
+      parts.push(
+        <div key={`image-${match.index}`} className="my-3">
+          <Image
+            src={match[1]}
+            alt="Keyframe from video"
+            width={400}
+            height={225}
+            className="rounded border object-cover max-w-full h-auto"
+            sizes="(max-width: 768px) 100vw, 400px"
+            onError={() => {
+              console.log('Failed to load keyframe image:', match[1]);
+            }}
+          />
+        </div>
+      );
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text after last image
+    if (lastIndex < text.length) {
+      const remainingText = text.slice(lastIndex);
+
+      // Handle bold text in remaining text
+      const boldParts: (string | React.ReactElement)[] = [];
+      let boldLastIndex = 0;
+
+      remainingText.replace(/\*\*(.*?)\*\*/g, (boldMatch, content, index) => {
+        if (index > boldLastIndex) {
+          boldParts.push(remainingText.slice(boldLastIndex, index));
+        }
+        boldParts.push(<strong key={`bold-${lastIndex}-${index}`}>{content}</strong>);
+        boldLastIndex = index + boldMatch.length;
+        return boldMatch;
+      });
+
+      if (boldLastIndex < remainingText.length) {
+        boldParts.push(remainingText.slice(boldLastIndex));
+      }
+
+      parts.push(...boldParts);
+    }
+
+    // If no images were found, handle bold text in the entire text
+    if (parts.length === 0) {
+      let boldLastIndex = 0;
+      const boldParts: (string | React.ReactElement)[] = [];
+
+      text.replace(/\*\*(.*?)\*\*/g, (boldMatch, content, index) => {
+        if (index > boldLastIndex) {
+          boldParts.push(text.slice(boldLastIndex, index));
+        }
+        boldParts.push(<strong key={`bold-${index}`}>{content}</strong>);
+        boldLastIndex = index + boldMatch.length;
+        return boldMatch;
+      });
+
+      if (boldLastIndex < text.length) {
+        boldParts.push(text.slice(boldLastIndex));
+      }
+
+      return boldParts.length > 1 ? boldParts : text;
+    }
+
+    return parts.length > 0 ? parts : text;
   };
 
   return <>{formatText(content)}</>;
 }
+
 
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  sources?: Array<{
-    videoTitle: string;
-    videoId: string;
-    snippet: string;
-    timestamp?: number;
-    keyframeUrl?: string;
-    similarity: number;
-  }>;
 }
 
 interface ChatStats {
@@ -165,8 +231,7 @@ export default function ChatPage() {
           id: result.response.messageId,
           role: 'assistant',
           content: result.response.content,
-          timestamp: new Date(),
-          sources: result.response.sources
+          timestamp: new Date()
         };
 
         setMessages(prev => [...prev, assistantMessage]);
@@ -304,6 +369,7 @@ export default function ChatPage() {
                     }`}>
                       {message.timestamp.toLocaleTimeString()}
                     </div>
+
                   </div>
 
                   {message.role === 'user' && (

@@ -94,8 +94,8 @@ export const videoSummary = pgTable("video_summary", {
     diagrams?: string[];
     suggestedTags?: string[];
   }>(),
-  processingStatus: text("processing_status", { 
-    enum: ["pending", "extracting_transcript", "extracting_keyframes", "uploading_assets", "generating_summary", "completed", "failed"] 
+  processingStatus: text("processing_status", {
+    enum: ["pending", "extracting_transcript", "extracting_keyframes", "uploading_assets", "generating_summary", "generating_embeddings", "completed", "failed"]
   }).default("pending").notNull(),
   processingError: text("processing_error"),
   processingProgress: integer("processing_progress").default(0), // 0-100 percentage
