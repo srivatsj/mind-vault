@@ -63,7 +63,7 @@ function MessageContent({ content }: { content: string }) {
     // Handle images [IMAGE:URL] first
     const imageRegex = /\[IMAGE:(https?:\/\/[^\]]+)\]/g;
     let lastIndex = 0;
-    let match;
+    let match: RegExpExecArray | null;
 
     while ((match = imageRegex.exec(text)) !== null) {
       // Add text before the image
@@ -85,7 +85,7 @@ function MessageContent({ content }: { content: string }) {
             className="rounded border object-cover max-w-full h-auto"
             sizes="(max-width: 768px) 100vw, 400px"
             onError={() => {
-              console.log('Failed to load keyframe image:', match[1]);
+              console.log('Failed to load keyframe image:', match?.[1]);
             }}
           />
         </div>
