@@ -153,7 +153,8 @@ export const HomeView = () => {
                   </CardContent>
                 </Card>
                 
-                <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-primary group border-primary/10 bg-gradient-to-br from-primary/5 to-primary/10">
+                <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-primary group border-primary/10 bg-gradient-to-br from-primary/5 to-primary/10"
+                  onClick={() => router.push("/chat")}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
                       Chat with AI
@@ -170,7 +171,8 @@ export const HomeView = () => {
                   </CardContent>
                 </Card>
                 
-                <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-accent group border-accent/10 bg-gradient-to-br from-accent/5 to-accent/10">
+                <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-accent group border-accent/10 bg-gradient-to-br from-accent/5 to-accent/10" 
+                  onClick={() => router.push("/categories")}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
                       Categories

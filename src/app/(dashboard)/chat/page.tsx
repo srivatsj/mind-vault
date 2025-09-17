@@ -5,18 +5,22 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import {
   Loader2,
   MessageCircle,
   Send,
   User,
-  Bot
+  Bot,
+  History,
+  Plus,
+  Clock
 } from 'lucide-react';
 import {
   createChatConversation,
   sendChatMessage,
-  getChatStats
+  getChatStats,
+  getChatConversations,
+  getChatHistory
 } from '@/modules/chat/actions/chat.actions';
 
 // Simple markdown-like formatting component with image support
@@ -153,6 +157,14 @@ interface ChatMessage {
   timestamp: Date;
 }
 
+interface ChatConversation {
+  id: string;
+  title: string | null;
+  updatedAt: Date;
+  messageCount?: number;
+  lastMessage?: string | null;
+}
+
 interface ChatStats {
   totalConversations: number;
   totalMessages: number;
@@ -169,10 +181,14 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [stats, setStats] = useState<ChatStats | null>(null);
+  const [conversations, setConversations] = useState<ChatConversation[]>([]);
+  const [showConversations, setShowConversations] = useState(false);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadStats();
+    loadConversations();
   }, []);
 
   useEffect(() => {
@@ -187,6 +203,39 @@ export default function ChatPage() {
       }
     } catch (error) {
       console.error('Failed to load stats:', error);
+    }
+  };
+
+  const loadConversations = async () => {
+    setIsLoadingConversations(true);
+    try {
+      const result = await getChatConversations();
+      if (result.success && result.conversations) {
+        setConversations(result.conversations);
+      }
+    } catch (error) {
+      console.error('Failed to load conversations:', error);
+    } finally {
+      setIsLoadingConversations(false);
+    }
+  };
+
+  const loadConversationMessages = async (convId: string) => {
+    try {
+      const result = await getChatHistory(convId);
+      if (result.success && result.messages) {
+        const chatMessages = result.messages.map(msg => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date(msg.createdAt)
+        }));
+        setMessages(chatMessages);
+        setConversationId(convId);
+        setShowConversations(false);
+      }
+    } catch (error) {
+      console.error('Failed to load conversation messages:', error);
     }
   };
 
@@ -217,6 +266,7 @@ export default function ChatPage() {
 
         if (result.success) {
           setConversationId(result.conversationId);
+          await loadConversations(); // Refresh conversations list
         }
       } else {
         // Send message to existing conversation
@@ -278,25 +328,96 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Stats Summary */}
-        {stats && (
-          <div className="flex items-center gap-3 text-xs">
-            <div className="text-center">
-              <div className="font-semibold text-indigo-600 text-sm">
-                {stats.availableContent.totalEmbeddings}
-              </div>
-              <div className="text-gray-500">Content</div>
-            </div>
-            <Separator orientation="vertical" className="h-6" />
-            <div className="text-center">
-              <div className="font-semibold text-green-600 text-sm">
-                {stats.totalConversations}
-              </div>
-              <div className="text-gray-500">Chats</div>
-            </div>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowConversations(!showConversations)}
+            className="flex items-center gap-2"
+          >
+            <History className="h-4 w-4" />
+            History
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setMessages([]);
+              setConversationId(null);
+              setShowConversations(false);
+            }}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            New Chat
+          </Button>
+        </div>
+
       </div>
+
+      {/* Conversations Sidebar */}
+      {showConversations && (
+        <div className="border-b bg-white/50 backdrop-blur-sm">
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-900">Recent Conversations</h3>
+              {stats && (
+                <span className="text-xs text-gray-500">
+                  {stats.totalConversations} total
+                </span>
+              )}
+            </div>
+            <ScrollArea className="h-32">
+              {isLoadingConversations ? (
+                <div className="flex items-center justify-center h-20">
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                </div>
+              ) : conversations.length === 0 ? (
+                <div className="text-center text-gray-500 text-sm py-4">
+                  No conversations yet
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {conversations.map((conv) => (
+                    <button
+                      key={conv.id}
+                      onClick={() => loadConversationMessages(conv.id)}
+                      className={`w-full text-left p-2 rounded-lg hover:bg-white/80 transition-colors border ${
+                        conversationId === conv.id
+                          ? 'bg-indigo-50 border-indigo-200'
+                          : 'border-transparent hover:border-gray-200'
+                      }`}
+                    >
+                      <div className="text-sm font-medium text-gray-900 truncate">
+                        {conv.title || 'Untitled Chat'}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Clock className="h-3 w-3 text-gray-400" />
+                        <span className="text-xs text-gray-500">
+                          {new Date(conv.updatedAt).toLocaleDateString()}
+                        </span>
+                        {conv.messageCount && (
+                          <>
+                            <span className="text-gray-400">•</span>
+                            <span className="text-xs text-gray-500">
+                              {conv.messageCount} messages
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      {conv.lastMessage && (
+                        <div className="text-xs text-gray-400 mt-1 truncate">
+                          {conv.lastMessage.substring(0, 60)}...
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        </div>
+      )}
 
       {/* Chat Messages */}
       <div className="flex-1 flex flex-col min-h-0">

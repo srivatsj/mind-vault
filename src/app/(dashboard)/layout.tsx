@@ -56,11 +56,6 @@ const sidebarItems = [
     icon: Tag,
     url: "/categories",
   },
-  {
-    title: "Analytics",
-    icon: BarChart3,
-    url: "/analytics",
-  },
 ];
 
 const bottomItems = [
