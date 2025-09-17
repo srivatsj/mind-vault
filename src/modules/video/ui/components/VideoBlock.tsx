@@ -1,15 +1,14 @@
 "use client";
 
 import { createReactBlockSpec } from "@blocknote/react";
-import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import {
   Clock,
-  ImageIcon,
   Calendar,
   User,
   ExternalLink
 } from "lucide-react";
+import { KeyMomentsSlideshow } from "./KeyMomentsSlideshow";
 
 interface VideoBlockProps {
   videoId: string;
@@ -132,53 +131,9 @@ export const VideoBlock = createReactBlockSpec(
             </div>
           )}
 
-          {/* Key Moments - Single Flow Layout */}
+          {/* Key Moments - Slideshow */}
           {videoData.keyframes && videoData.keyframes.length > 0 && (
-            <div className="space-y-4">
-              <h3 className="font-semibold flex items-center gap-2">
-                <ImageIcon className="h-4 w-4" />
-                Key Moments ({videoData.keyframes.length})
-              </h3>
-              <div className="space-y-6 mt-6">
-                {videoData.keyframes.map((keyframe) => (
-                  <div key={keyframe.id} className="flex gap-4 items-start">
-                    <div className="flex-shrink-0">
-                      <div className="w-32 h-20 bg-muted rounded overflow-hidden">
-                        <Image
-                          src={keyframe.blobUrl}
-                          alt={keyframe.description || `Keyframe at ${formatTimestamp(keyframe.timestamp)}`}
-                          className="w-full h-full object-cover"
-                          width={128}
-                          height={80}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-primary">
-                          {formatTimestamp(keyframe.timestamp)}
-                        </span>
-                        {keyframe.confidence && (
-                          <Badge variant="outline" className="text-xs">
-                            {Math.round(keyframe.confidence * 100)}%
-                          </Badge>
-                        )}
-                        {keyframe.category && (
-                          <Badge variant="secondary" className="text-xs">
-                            {keyframe.category}
-                          </Badge>
-                        )}
-                      </div>
-                      {keyframe.description && (
-                        <p className="text-sm text-muted-foreground">
-                          {keyframe.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <KeyMomentsSlideshow keyframes={videoData.keyframes} />
           )}
         </div>
       );
