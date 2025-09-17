@@ -343,20 +343,26 @@ export class EmbeddingService {
     textContent: string
   ): Promise<number[]> {
     try {
-      // For now, return a mock embedding
-      // TODO: Implement Gemini Vision multimodal embedding
-      console.warn('Using mock multimodal embedding - implement Gemini Vision integration');
+      console.log(`Generating multimodal embedding for image: ${imageUrl.substring(0, 50)}, text: ${textContent.substring(0, 100)}`);
 
-      // Simulate different embeddings for visual content by using image URL hash
-      const imageHash = this.simpleHash(imageUrl);
-      const textHash = this.simpleHash(textContent);
+      // Use the proper MultimodalEmbeddingService
+      const { MultimodalEmbeddingService } = await import('./multimodal-embedding.service');
 
-      return new Array(1536).fill(0).map((_, i) => {
-        return Math.sin(i * 0.1 + imageHash + textHash) * 0.5;
-      });
+      return await MultimodalEmbeddingService.embedKeyframeContent(
+        imageUrl,
+        textContent,
+        {
+          approach: 'vision-description',
+          imageWeight: 0.7,
+          textWeight: 0.3
+        }
+      );
     } catch (error) {
       console.error('Failed to generate multimodal embedding:', error);
-      throw error;
+
+      // Fallback to text-only embedding
+      console.warn('Falling back to text-only embedding');
+      return await this.embedText(textContent);
     }
   }
 
