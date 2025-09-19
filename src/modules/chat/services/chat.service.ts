@@ -122,7 +122,6 @@ export class ChatService {
 
     // Generate follow-up suggestions
     const followUpSuggestions = await RAGService.suggestFollowUps(
-      message,
       ragResponse.sources.map(source => ({
         contentId: '',
         contentType: 'mixed',

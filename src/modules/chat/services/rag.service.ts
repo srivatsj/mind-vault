@@ -376,11 +376,29 @@ Do not make up information not present in the provided content.`;
         temperature: 0.7,
       });
 
-      return result.text;
+      // Post-process the response to ensure keyframe images are properly converted
+      const processedText = this.postProcessKeyframeImages(result.text);
+
+      return processedText;
     } catch (error) {
       console.error('Failed to generate contextual response:', error);
       return `I found relevant content about "${originalQuery}" in your videos, but I'm having trouble generating a response right now. Please try again in a moment.`;
     }
+  }
+
+  /**
+   * Post-process AI response to convert keyframe image references to proper format
+   */
+  private static postProcessKeyframeImages(text: string): string {
+    // Convert [KEYFRAME_IMAGE:URL] to [IMAGE:URL] for chat interface
+    const keyframeImageRegex = /\[KEYFRAME_IMAGE:(https?:\/\/[^\]]+)\]/g;
+    const convertedText = text.replace(keyframeImageRegex, '[IMAGE:$1]');
+
+    if (convertedText !== text) {
+      console.log('🖼️ Converted keyframe image references to proper format');
+    }
+
+    return convertedText;
   }
 
   /**
@@ -410,7 +428,6 @@ Do not make up information not present in the provided content.`;
    * Suggest follow-up questions based on content
    */
   static async suggestFollowUps(
-    originalQuery: string,
     relevantContent: ContentMatch[]
   ): Promise<string[]> {
     if (relevantContent.length === 0) {
