@@ -1,4 +1,25 @@
-import { pgTable, unique, text, boolean, timestamp, foreignKey, integer, json } from "drizzle-orm/pg-core"
+import { pgTable, unique, text, timestamp, boolean, foreignKey, integer, index, vector, json } from "drizzle-orm/pg-core"
+
+
+
+export const category = pgTable("category", {
+	id: text().primaryKey().notNull(),
+	name: text().notNull(),
+	description: text(),
+	color: text().default('#10B981'),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	unique("category_name_unique").on(table.name),
+]);
+
+export const tag = pgTable("tag", {
+	id: text().primaryKey().notNull(),
+	name: text().notNull(),
+	color: text().default('#3B82F6'),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	unique("tag_name_unique").on(table.name),
+]);
 
 export const user = pgTable("user", {
 	id: text().primaryKey().notNull(),
@@ -10,6 +31,20 @@ export const user = pgTable("user", {
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	unique("user_email_unique").on(table.email),
+]);
+
+export const chatConversation = pgTable("chat_conversation", {
+	id: text().primaryKey().notNull(),
+	userId: text("user_id").notNull(),
+	title: text(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [user.id],
+			name: "chat_conversation_user_id_user_id_fk"
+		}).onDelete("cascade"),
 ]);
 
 export const account = pgTable("account", {
@@ -32,34 +67,6 @@ export const account = pgTable("account", {
 			foreignColumns: [user.id],
 			name: "account_user_id_user_id_fk"
 		}).onDelete("cascade"),
-]);
-
-export const verification = pgTable("verification", {
-	id: text().primaryKey().notNull(),
-	identifier: text().notNull(),
-	value: text().notNull(),
-	expiresAt: timestamp("expires_at", { mode: 'string' }).notNull(),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
-});
-
-export const category = pgTable("category", {
-	id: text().primaryKey().notNull(),
-	name: text().notNull(),
-	description: text(),
-	color: text().default('#10B981'),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
-	unique("category_name_unique").on(table.name),
-]);
-
-export const tag = pgTable("tag", {
-	id: text().primaryKey().notNull(),
-	name: text().notNull(),
-	color: text().default('#3B82F6'),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
-	unique("tag_name_unique").on(table.name),
 ]);
 
 export const keyframe = pgTable("keyframe", {
@@ -119,6 +126,32 @@ export const videoSummaryTag = pgTable("video_summary_tag", {
 		}).onDelete("cascade"),
 ]);
 
+export const contentEmbedding = pgTable("content_embedding", {
+	id: text().primaryKey().notNull(),
+	videoSummaryId: text("video_summary_id").notNull(),
+	contentType: text("content_type").notNull(),
+	contentText: text("content_text").notNull(),
+	embedding: vector({ dimensions: 768 }),
+	keyframeId: text("keyframe_id"),
+	timestamp: integer(),
+	metadata: json(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("content_embedding_vector_idx").using("hnsw", table.embedding.asc().nullsLast().op("vector_cosine_ops")),
+	index("content_type_idx").using("btree", table.contentType.asc().nullsLast().op("text_ops")),
+	index("video_summary_idx").using("btree", table.videoSummaryId.asc().nullsLast().op("text_ops")),
+	foreignKey({
+			columns: [table.videoSummaryId],
+			foreignColumns: [videoSummary.id],
+			name: "content_embedding_video_summary_id_video_summary_id_fk"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.keyframeId],
+			foreignColumns: [keyframe.id],
+			name: "content_embedding_keyframe_id_keyframe_id_fk"
+		}).onDelete("cascade"),
+]);
+
 export const session = pgTable("session", {
 	id: text().primaryKey().notNull(),
 	expiresAt: timestamp("expires_at", { mode: 'string' }).notNull(),
@@ -166,3 +199,27 @@ export const videoSummary = pgTable("video_summary", {
 			name: "video_summary_user_id_user_id_fk"
 		}).onDelete("cascade"),
 ]);
+
+export const chatMessage = pgTable("chat_message", {
+	id: text().primaryKey().notNull(),
+	conversationId: text("conversation_id").notNull(),
+	role: text().notNull(),
+	content: text().notNull(),
+	contextData: json("context_data"),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.conversationId],
+			foreignColumns: [chatConversation.id],
+			name: "chat_message_conversation_id_chat_conversation_id_fk"
+		}).onDelete("cascade"),
+]);
+
+export const verification = pgTable("verification", {
+	id: text().primaryKey().notNull(),
+	identifier: text().notNull(),
+	value: text().notNull(),
+	expiresAt: timestamp("expires_at", { mode: 'string' }).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+});

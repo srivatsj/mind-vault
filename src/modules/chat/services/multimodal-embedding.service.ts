@@ -40,7 +40,7 @@ export class MultimodalEmbeddingService {
   /**
    * Use Gemini Vision to analyze an image and extract detailed descriptions
    */
-  private static async analyzeImageWithGemini(imageUrl: string): Promise<{
+  static async analyzeImageWithGemini(imageUrl: string): Promise<{
     description: string;
     elements: string[];
     sceneType: string;
@@ -48,7 +48,7 @@ export class MultimodalEmbeddingService {
   }> {
     const analysisSchema = z.object({
       description: z.string().min(10).describe('Detailed description of what is shown in the image'),
-      elements: z.array(z.string()).max(10).describe('List of key visual elements, objects, or UI components'),
+      elements: z.array(z.string()).max(20).describe('List of key visual elements, objects, or UI components'),
       sceneType: z.enum(['code', 'diagram', 'presentation', 'interface', 'chart', 'screenshot', 'other']).describe('Type of content shown'),
       textContent: z.string().optional().describe('Any text visible in the image')
     });

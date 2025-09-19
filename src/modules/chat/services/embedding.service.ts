@@ -108,6 +108,8 @@ export class EmbeddingService {
       .from(keyframe)
       .where(eq(keyframe.videoSummaryId, videoSummaryId));
 
+    console.log(`📊 Found ${keyframes.length} keyframes for video: ${videoSummaryId}`);
+
     keyframes.forEach(kf => {
       if (kf.description || kf.transcriptSegment || kf.blobUrl) {
         const contentText = [
@@ -137,6 +139,7 @@ export class EmbeddingService {
     });
 
     // 5. Generate embeddings for all chunks
+    console.log(`📊 About to generate embeddings for ${chunks.length} chunks (${chunks.filter(c => c.contentType === 'keyframe').length} keyframes)`);
     await this.embedChunks(chunks);
 
     console.log(`Generated ${chunks.length} embeddings for video: ${videoSummaryId}`);

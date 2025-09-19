@@ -5,7 +5,7 @@ import { KeyframeService } from '../services/keyframe.service';
 import { AIService } from '../services/ai.service';
 import { StorageService } from '../services/storage.service';
 import { VideoSummaryDao } from '../data/video-summary.dao';
-import { MultimodalEmbeddingService } from '../../chat/services/multimodal-embedding.service';
+import { EmbeddingService } from '../../chat/services/embedding.service';
 
 /**
  * Main video processing orchestration job
@@ -197,7 +197,8 @@ export const videoProcessingJob = typedInngest.createFunction(
     // Step 4: Upload assets to blob storage
     const assetUpload = await step.run('upload-assets', async () => {
       if (!keyframeExtraction.success) {
-        throw new Error('Cannot upload assets without successful keyframe extraction');
+        console.warn(`⚠️ Skipping asset upload for ${data.title}: keyframe extraction failed`);
+        return { success: false, error: 'Keyframe extraction failed', keyframes: [] };
       }
 
       // Skip upload if no keyframes were extracted
@@ -274,143 +275,7 @@ export const videoProcessingJob = typedInngest.createFunction(
       }
     });
 
-    // Step 5: Generate multimodal embeddings
-    await step.run('generate-embeddings', async () => {
-      console.log(`Generating multimodal embeddings for: ${data.title}`);
-
-      try {
-        // Update database status
-        await VideoSummaryDao.updateProcessingStatus(
-          data.videoSummaryId,
-          'generating_embeddings',
-          undefined,
-          90,
-          'Generating multimodal embeddings'
-        );
-
-        // Get updated video summary with all processed data
-        const videoSummary = await VideoSummaryDao.findById(data.videoSummaryId, data.userId);
-        if (!videoSummary) {
-          throw new Error('Video summary not found for embedding generation');
-        }
-
-        const embeddings = [];
-
-        // 1. Generate embedding for main summary content
-        if (videoSummary.aiGeneratedContent?.summary?.summary) {
-          const summaryEmbedding = await MultimodalEmbeddingService.embedKeyframeContent(
-            videoSummary.thumbnailUrl || '',
-            videoSummary.aiGeneratedContent.summary.summary,
-            { approach: 'vision-description' }
-          );
-
-          embeddings.push({
-            contentType: 'summary' as const,
-            contentText: videoSummary.aiGeneratedContent.summary.summary,
-            embedding: summaryEmbedding,
-            metadata: {
-              topics: videoSummary.aiGeneratedContent.summary.topics,
-              difficulty: videoSummary.aiGeneratedContent.summary.difficulty,
-              estimatedReadTime: videoSummary.aiGeneratedContent.summary.estimatedReadTime
-            }
-          });
-        }
-
-        // 2. Generate embeddings for key points
-        if (videoSummary.aiGeneratedContent?.summary?.keyPoints) {
-          for (const [index, keyPoint] of videoSummary.aiGeneratedContent.summary.keyPoints.entries()) {
-            const keyPointEmbedding = await MultimodalEmbeddingService.generateTextEmbedding(keyPoint);
-
-            embeddings.push({
-              contentType: 'key_point' as const,
-              contentText: keyPoint,
-              embedding: keyPointEmbedding,
-              metadata: {
-                segmentIndex: index,
-                topics: videoSummary.aiGeneratedContent.summary.topics
-              }
-            });
-          }
-        }
-
-        // 3. Generate embeddings for keyframes with their descriptions
-        const keyframes = await VideoSummaryDao.getKeyframes(data.videoSummaryId);
-        for (const keyframe of keyframes) {
-          if (keyframe.blobUrl && keyframe.description) {
-            const keyframeEmbedding = await MultimodalEmbeddingService.embedKeyframeContent(
-              keyframe.blobUrl,
-              keyframe.description,
-              { approach: 'vision-description' }
-            );
-
-            embeddings.push({
-              contentType: 'keyframe' as const,
-              contentText: keyframe.description,
-              embedding: keyframeEmbedding,
-              keyframeId: keyframe.id,
-              timestamp: keyframe.timestamp,
-              metadata: {
-                confidence: keyframe.confidence ?? undefined,
-                category: keyframe.category ?? undefined
-              }
-            });
-          }
-        }
-
-        // 4. Generate embeddings for transcript segments (if available)
-        if (transcript.success && transcript.segments) {
-          // Process transcript in meaningful chunks (every 30 seconds or logical breaks)
-          const segmentDuration = 30; // seconds
-          const transcriptChunks = [];
-
-          for (let i = 0; i < transcript.segments.length; i += segmentDuration) {
-            const segmentGroup = transcript.segments.slice(i, i + segmentDuration);
-            const combinedText = segmentGroup.map(s => s.text).join(' ');
-            const startTime = segmentGroup[0]?.start || 0;
-            const lastSegment = segmentGroup[segmentGroup.length - 1];
-            const endTime = lastSegment ? lastSegment.start + lastSegment.duration : startTime + segmentDuration;
-
-            if (combinedText.trim().length > 10) { // Only process meaningful content
-              transcriptChunks.push({
-                text: combinedText.trim(),
-                startTime,
-                endTime,
-                segmentIndex: Math.floor(i / segmentDuration)
-              });
-            }
-          }
-
-          for (const chunk of transcriptChunks) {
-            const transcriptEmbedding = await MultimodalEmbeddingService.generateTextEmbedding(chunk.text);
-
-            embeddings.push({
-              contentType: 'transcript_segment' as const,
-              contentText: chunk.text,
-              embedding: transcriptEmbedding,
-              timestamp: Math.floor(chunk.startTime),
-              metadata: {
-                segmentIndex: chunk.segmentIndex,
-                duration: chunk.endTime - chunk.startTime
-              }
-            });
-          }
-        }
-
-        // 5. Save all embeddings to database
-        await VideoSummaryDao.saveEmbeddings(data.videoSummaryId, embeddings);
-
-        console.log(`✅ Generated ${embeddings.length} multimodal embeddings for: ${data.title}`);
-
-        return { success: true, embeddingsCount: embeddings.length };
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Embedding generation failed';
-        console.error('Embedding generation step failed:', error);
-
-        // Continue processing even if embeddings fail (non-critical for basic functionality)
-        console.warn(`Continuing processing without embeddings for ${data.title}: ${errorMessage}`);
-        return { success: false, error: errorMessage };
-      }
-    });
+    // Step 5: Prepare for finalization (embedding generation moved to after keyframe saving)
 
     // Step 6: Update database with final results
     await step.run('finalize-processing', async () => {
@@ -428,25 +293,44 @@ export const videoProcessingJob = typedInngest.createFunction(
             
             await VideoSummaryDao.addKeyframe(data.videoSummaryId, {
               timestamp,
-              imageUrl: keyframe.url,
+              imageUrl: keyframe?.url || '',
               description: interval?.reason || `Keyframe at ${timestamp}s`,
               confidence: interval?.confidence,
               category: interval?.category,
               aiReason: interval?.reason,
-              fileSize: keyframe.size
+              fileSize: keyframe?.size
             });
           }
         }
 
+        // Generate embeddings AFTER keyframes are saved to database
+        console.log(`Generating multimodal embeddings for: ${data.title}`);
+        try {
+          await VideoSummaryDao.updateProcessingStatus(
+            data.videoSummaryId,
+            'generating_embeddings',
+            undefined,
+            90,
+            'Generating multimodal embeddings'
+          );
+
+          console.log(`📊 Starting embedding generation for video: ${data.videoSummaryId}`);
+          await EmbeddingService.generateEmbeddingsForVideo(data.videoSummaryId);
+          console.log(`✅ Generated multimodal embeddings for: ${data.title}`);
+        } catch (error) {
+          console.error('Embedding generation failed:', error);
+          console.warn(`Continuing without embeddings for ${data.title}`);
+        }
+
         // Update processing status to completed
         await VideoSummaryDao.updateProcessingStatus(
-          data.videoSummaryId, 
+          data.videoSummaryId,
           'completed',
           undefined,
           100,
           'Processing completed successfully'
         );
-        
+
         console.log(`Successfully completed processing for: ${data.title}`);
         
         return { success: true };

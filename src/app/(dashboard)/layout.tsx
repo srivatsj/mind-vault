@@ -27,7 +27,6 @@ import {
   Settings,
   Tag,
   User,
-  BarChart3,
 } from "lucide-react";
 
 const sidebarItems = [
