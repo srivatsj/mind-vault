@@ -210,7 +210,7 @@ export const UnifiedBlockNoteEditor = ({
     <BlockNoteView
       editor={editor}
       onChange={handleChange}
-      theme="dark"
+      theme="light"
       className={className}
     />
   );

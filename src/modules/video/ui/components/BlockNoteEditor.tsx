@@ -43,7 +43,7 @@ export const BlockNoteEditor = ({
     <BlockNoteView
       editor={editor}
       onChange={handleChange}
-      theme="dark"
+      theme="light"
       className={className}
     />
   );
